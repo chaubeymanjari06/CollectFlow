@@ -233,3 +233,103 @@ export interface PromiseToPay {
   createdAt: number;
   updatedAt: number;
 }
+
+export type PaymentSource = 'razorpay' | 'cashfree' | 'upi_qr' | 'tally_bank' | 'manual';
+export type PaymentProvider = 'razorpay' | 'cashfree' | 'bank' | 'tally';
+export type PaymentStatus = 'INITIATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+export type ReconciliationStatus = 'UNMATCHED' | 'PARTIALLY_MATCHED' | 'FULLY_MATCHED';
+
+export interface Payment {
+  paymentId: string;
+  tenantId: string;
+  customerId?: string | null;
+  customerName?: string;
+  source: PaymentSource;
+  provider: PaymentProvider;
+  providerPaymentId?: string | null;
+  providerOrderId?: string | null;
+  utr?: string | null;
+  amount: number;
+  currency: string;
+  paymentDate: string; // ISO string
+  status: PaymentStatus;
+  reconciliationStatus: ReconciliationStatus;
+  matchedAmount: number;
+  unmatchedBalance: number;
+  rawReference?: string | null;
+  idempotencyKey: string;
+  notes?: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type MatchRule =
+  | 'EXACT_INVOICE_REF'
+  | 'EXACT_AMOUNT_MATCH'
+  | 'UTR_MATCH'
+  | 'DATE_WINDOW_MATCH'
+  | 'FUZZY_NARRATION'
+  | 'MANUAL_MATCH';
+
+export type ReconciliationState = 'AUTO_RECONCILED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+export type TallyWriteBackState = 'NOT_REQUIRED' | 'QUEUED' | 'SYNCED' | 'FAILED';
+
+export interface PaymentAllocation {
+  invoiceId: string;
+  invoiceNumber: string;
+  allocatedAmount: number;
+  invoiceBalanceBefore: number;
+  invoiceBalanceAfter: number;
+}
+
+export interface Reconciliation {
+  reconciliationId: string;
+  tenantId: string;
+  paymentId: string;
+  customerId: string;
+  customerName?: string;
+  paymentAmount: number;
+  allocations: PaymentAllocation[];
+  totalAllocated: number;
+  confidenceScore: number; // 0 - 100
+  matchRule: MatchRule;
+  status: ReconciliationState;
+  approvedBy?: string | null;
+  approvedAt?: number | null;
+  tallyWriteBackStatus: TallyWriteBackState;
+  tallyVoucherNumber?: string | null;
+  notes?: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface TallyBillAllocation {
+  billNumber: string;
+  billAmount: number;
+}
+
+export type TallyCommandStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export interface TallyVoucherCommand {
+  commandId: string;
+  tenantId: string;
+  deviceId?: string | null;
+  reconciliationId: string;
+  voucherType: 'Receipt';
+  voucherDate: string; // 'YYYYMMDD' or 'YYYY-MM-DD'
+  partyLedger: string;
+  bankOrCashLedger: string;
+  amount: number;
+  narration: string;
+  billsAllocated: TallyBillAllocation[];
+  status: TallyCommandStatus;
+  attemptCount: number;
+  lastAttemptAt?: number | null;
+  errorMessage?: string | null;
+  tallyMasterId?: string | null;
+  tallyVoucherNumber?: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+
