@@ -332,4 +332,70 @@ export interface TallyVoucherCommand {
   updatedAt: number;
 }
 
+export type CustomerRiskTier = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface CustomerStatementEntry {
+  id: string;
+  date: string;
+  type: 'INVOICE' | 'PAYMENT';
+  reference: string;
+  description: string;
+  debit: number; // Invoice amount
+  credit: number; // Payment amount
+  runningBalance: number;
+}
+
+export interface Customer360Data {
+  customer: Customer;
+  invoices: Invoice[];
+  payments: Payment[];
+  promises: PromiseToPay[];
+  messages: Message[];
+  reconciliations: Reconciliation[];
+  metrics: {
+    totalBilled: number;
+    totalPaid: number;
+    outstandingBalance: number;
+    overdueBalance: number;
+    creditLimit: number;
+    creditUtilizationPct: number;
+    averagePaymentDelayDays: number;
+    ptpSuccessRate: number;
+    riskTier: CustomerRiskTier;
+  };
+  ledgerEntries: CustomerStatementEntry[];
+}
+
+export interface CollectionPriorityItem {
+  customerId: string;
+  customerName: string;
+  mobile: string;
+  overdueBalance: number;
+  totalReceivable: number;
+  maxOverdueDays: number;
+  brokenPtpCount: number;
+  priorityScore: number; // 0 - 100
+  urgency: CustomerRiskTier;
+  contributingFactors: string[];
+  recommendedAction: string;
+}
+
+export interface CollectionIntelligenceMetrics {
+  dso: number;
+  collectionEfficiencyPct: number;
+  overduePercentage: number;
+  totalReceivables: number;
+  totalOverdue: number;
+  atRiskCapital: number;
+  riskBreakdown: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+  agingDistribution: AgingBuckets;
+  priorityQueue: CollectionPriorityItem[];
+}
+
+
 

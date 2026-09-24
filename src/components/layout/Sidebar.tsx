@@ -10,7 +10,8 @@ import {
   Users,
   Settings,
   Layers,
-  Radio
+  Radio,
+  Target,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 
@@ -24,6 +25,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Payments & UPI', to: '/payments', icon: CreditCard },
     { label: 'Reconciliation', to: '/reconciliation', icon: GitCompare },
     { label: 'WhatsApp Reminders', to: '/reminders', icon: MessageSquare },
+    { label: 'Collection Intelligence', to: '/analytics', icon: Target },
     { label: 'Team & Roles', to: '/team', icon: Users },
     { label: 'Settings & Sync', to: '/settings', icon: Settings },
   ];
