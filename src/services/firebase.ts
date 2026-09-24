@@ -10,7 +10,7 @@ export const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "71414006761",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:71414006761:web:b193aabb80165af78c8178",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-78JVWCDVLV",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://collectflow-320c4-default-rtdb.firebaseio.com"
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://collectflow-320c4-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 // Singleton initialization

@@ -11,6 +11,6 @@ describe('Firebase Platform Service', () => {
     expect(firebaseConfig.projectId).toBe('collectflow-320c4');
     expect(firebaseConfig.authDomain).toContain('collectflow-320c4.firebaseapp.com');
     expect(firebaseConfig.apiKey).toBeDefined();
-    expect(firebaseConfig.databaseURL).toContain('collectflow-320c4-default-rtdb');
+    expect(firebaseConfig.databaseURL).toBe('https://collectflow-320c4-default-rtdb.asia-southeast1.firebasedatabase.app/');
   });
 });
