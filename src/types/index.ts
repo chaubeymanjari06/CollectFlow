@@ -142,6 +142,7 @@ export interface Invoice {
   agingBucket: AgingBucket;
   daysPastDue: number;
   hasActivePtp: boolean;
+  activePtpId?: string | null;
   paymentLink?: string | null;
   upiIntentString?: string | null;
   lastReminderSentAt?: number | null;
@@ -184,4 +185,51 @@ export interface SyncJob {
   startedAt: number;
   completedAt?: number | null;
   durationMs?: number | null;
+}
+
+export type MessageChannel = 'WHATSAPP' | 'SMS' | 'EMAIL';
+export type MessageStatus = 'QUEUED' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'REPLIED';
+
+export interface Message {
+  messageId: string;
+  tenantId: string;
+  customerId: string;
+  customerName?: string;
+  customerMobile?: string;
+  invoiceIds: string[];
+  invoiceNumber?: string;
+  channel: MessageChannel;
+  direction: 'OUTBOUND' | 'INBOUND';
+  templateId: string;
+  templateVariables?: Record<string, string>;
+  content: string;
+  provider: string;
+  providerMessageId?: string | null;
+  status: MessageStatus;
+  sentAt?: number | null;
+  deliveredAt?: number | null;
+  readAt?: number | null;
+  repliedAt?: number | null;
+  createdAt: number;
+}
+
+export type PtpStatus = 'PENDING' | 'KEPT' | 'BROKEN' | 'CANCELLED';
+
+export interface PromiseToPay {
+  promiseId: string;
+  tenantId: string;
+  customerId: string;
+  customerName?: string;
+  invoiceIds: string[];
+  invoiceNumber?: string;
+  amount: number;
+  promisedDate: string; // 'YYYY-MM-DD'
+  status: PtpStatus;
+  source: 'WHATSAPP_BOT' | 'PORTAL' | 'MANUAL_EXECUTIVE';
+  createdBy: string;
+  keptDate?: string | null;
+  associatedPaymentId?: string | null;
+  notes?: string | null;
+  createdAt: number;
+  updatedAt: number;
 }
