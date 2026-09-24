@@ -17,6 +17,7 @@ import { PaymentsPage } from './pages/payments/PaymentsPage';
 import { ReconciliationPage } from './pages/reconciliation/ReconciliationPage';
 import { RemindersPage } from './pages/reminders/RemindersPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
+import { CopilotPage } from './pages/copilot/CopilotPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 
 export const App: React.FC = () => {
@@ -56,6 +57,7 @@ export const App: React.FC = () => {
               <Route path="reconciliation" element={<ReconciliationPage />} />
               <Route path="reminders" element={<RemindersPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="copilot" element={<CopilotPage />} />
               <Route path="team" element={<TeamManagementPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

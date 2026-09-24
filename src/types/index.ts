@@ -111,10 +111,12 @@ export interface Customer {
   contactPerson?: string | null;
   mobile: string;
   email?: string | null;
+  gstin?: string | null;
   creditLimit: number;
   paymentTerms: number;
   optOutWhatsApp: boolean;
   metrics: CustomerMetrics;
+  riskTier?: CustomerRiskTier;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: number;
   updatedAt: number;
@@ -396,6 +398,69 @@ export interface CollectionIntelligenceMetrics {
   agingDistribution: AgingBuckets;
   priorityQueue: CollectionPriorityItem[];
 }
+
+export type MessageTone = 'courteous' | 'firm' | 'urgent' | 'final_notice';
+
+export interface AccountDiagnosis {
+  customerId: string;
+  customerName: string;
+  executiveSummary: string;
+  rootCauses: string[];
+  riskAssessment: {
+    riskTier: CustomerRiskTier;
+    defaultProbability: 'LOW' | 'MEDIUM' | 'HIGH';
+    creditUtilizationPct: number;
+    overdueDays: number;
+  };
+  recommendedStrategy: string[];
+}
+
+export interface SmartDraftResult {
+  recipientName: string;
+  recipientMobile: string;
+  channel: 'WHATSAPP';
+  tone: MessageTone;
+  subject?: string;
+  content: string;
+  suggestedUpiLink?: string;
+  invoicesReferenced: string[];
+  totalAmount: number;
+}
+
+export interface ExtractedPtpResult {
+  rawText: string;
+  extractedDate: string | null; // 'YYYY-MM-DD'
+  extractedAmount: number | null;
+  confidenceScore: number; // 0 - 100
+  customerIntent: string;
+}
+
+export interface CashFlowForecast {
+  periodDays: number;
+  expectedInflow: number;
+  conservativeInflow: number;
+  optimisticInflow: number;
+  ptpBackedInflow: number;
+  dueInvoiceInflow: number;
+  assumptions: string[];
+}
+
+export interface ManagementSummary {
+  tenantName: string;
+  generatedAt: number;
+  totalReceivables: number;
+  overduePercentage: number;
+  dso: number;
+  criticalAccountsCount: number;
+  topOverdueAccounts: Array<{
+    name: string;
+    overdueAmount: number;
+    daysOverdue: number;
+  }>;
+  executiveNarrative: string;
+  suggestedActionItems: string[];
+}
+
 
 
 
