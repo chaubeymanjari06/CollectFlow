@@ -39,6 +39,8 @@ export interface TenantSettings {
   sendDueReminders: boolean;
   sendOverdueReminders: boolean;
   reminderChannel: 'WHATSAPP' | 'SMS' | 'EMAIL';
+  upiVpa?: string;
+  payeeName?: string;
 }
 
 export interface Tenant {
@@ -89,6 +91,17 @@ export interface DashboardMetrics {
   updatedAt: number;
 }
 
+export interface CustomerMetrics {
+  totalReceivable: number;
+  overdueBalance: number;
+  openInvoicesCount: number;
+  overdueInvoicesCount: number;
+  averagePaymentDelayDays: number;
+  ptpSuccessRate: number;
+  lastPaymentDate?: string | null;
+  lastPaymentAmount?: number | null;
+}
+
 export interface Customer {
   customerId: string;
   tenantId: string;
@@ -101,20 +114,14 @@ export interface Customer {
   creditLimit: number;
   paymentTerms: number;
   optOutWhatsApp: boolean;
-  metrics: {
-    totalReceivable: number;
-    overdueBalance: number;
-    openInvoicesCount: number;
-    overdueInvoicesCount: number;
-    averagePaymentDelayDays: number;
-    ptpSuccessRate: number;
-    lastPaymentDate?: string | null;
-    lastPaymentAmount?: number | null;
-  };
+  metrics: CustomerMetrics;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: number;
   updatedAt: number;
 }
+
+export type AgingBucket = 'CURRENT' | '1-30' | '31-60' | '61-90' | '90+';
+export type InvoiceStatus = 'OPEN' | 'DUE_SOON' | 'DUE_TODAY' | 'OVERDUE' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
 
 export interface Invoice {
   invoiceId: string;
@@ -122,6 +129,8 @@ export interface Invoice {
   customerId: string;
   customerName: string;
   source: 'tally' | 'zoho' | 'manual';
+  sourceCompanyId?: string;
+  sourceRecordId?: string;
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string;
@@ -129,8 +138,8 @@ export interface Invoice {
   paidAmount: number;
   balance: number;
   currency: string;
-  status: 'OPEN' | 'DUE_SOON' | 'DUE_TODAY' | 'OVERDUE' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
-  agingBucket: 'CURRENT' | '1-30' | '31-60' | '61-90' | '90+';
+  status: InvoiceStatus;
+  agingBucket: AgingBucket;
   daysPastDue: number;
   hasActivePtp: boolean;
   paymentLink?: string | null;
@@ -139,4 +148,40 @@ export interface Invoice {
   reminderCount: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface Device {
+  deviceId: string;
+  tenantId: string;
+  deviceName: string;
+  agentVersion: string;
+  osVersion: string;
+  status: 'ONLINE' | 'OFFLINE' | 'SYNCING' | 'ERROR';
+  tallyHost: string;
+  tallyVersion?: string;
+  activeCompany?: string;
+  lastHeartbeat: number;
+  lastSyncTime?: number;
+  syncCursor?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SyncJob {
+  syncJobId: string;
+  tenantId: string;
+  deviceId: string;
+  syncType: 'INITIAL' | 'INCREMENTAL' | 'MANUAL';
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  recordsReceived?: {
+    customers: number;
+    invoices: number;
+    payments?: number;
+  };
+  recordsUpserted: number;
+  recordsRejected?: number;
+  errors?: Array<{ recordId: string; error: string }>;
+  startedAt: number;
+  completedAt?: number | null;
+  durationMs?: number | null;
 }
