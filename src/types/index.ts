@@ -105,7 +105,7 @@ export interface CustomerMetrics {
 export interface Customer {
   customerId: string;
   tenantId: string;
-  source: 'tally' | 'zoho' | 'manual' | 'excel';
+  source: 'tally' | 'zoho' | 'manual' | 'excel' | 'sheets';
   sourceCustomerId?: string;
   name: string;
   contactPerson?: string | null;
@@ -130,7 +130,7 @@ export interface Invoice {
   tenantId: string;
   customerId: string;
   customerName: string;
-  source: 'tally' | 'zoho' | 'manual';
+  source: 'tally' | 'zoho' | 'manual' | 'excel' | 'sheets';
   sourceCompanyId?: string;
   sourceRecordId?: string;
   invoiceNumber: string;
@@ -236,8 +236,8 @@ export interface PromiseToPay {
   updatedAt: number;
 }
 
-export type PaymentSource = 'razorpay' | 'cashfree' | 'upi_qr' | 'tally_bank' | 'manual';
-export type PaymentProvider = 'razorpay' | 'cashfree' | 'bank' | 'tally';
+export type PaymentSource = 'razorpay' | 'cashfree' | 'upi_qr' | 'tally_bank' | 'zoho' | 'manual';
+export type PaymentProvider = 'razorpay' | 'cashfree' | 'bank' | 'tally' | 'zoho';
 export type PaymentStatus = 'INITIATED' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 export type ReconciliationStatus = 'UNMATCHED' | 'PARTIALLY_MATCHED' | 'FULLY_MATCHED';
 
@@ -461,6 +461,138 @@ export interface ManagementSummary {
   suggestedActionItems: string[];
 }
 
+// ==========================================
+// Phase 13: Zoho, Excel/CSV & Google Sheets Types
+// ==========================================
 
+export type IntegrationStatus = 'DISCONNECTED' | 'CONNECTED' | 'SYNCING' | 'ERROR';
 
+export interface ZohoIntegrationConfig {
+  organizationId: string;
+  organizationName?: string;
+  clientId: string;
+  clientSecret: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: number;
+  connectedAt?: number;
+  status: IntegrationStatus;
+  webhookSecret?: string;
+  autoSyncEnabled: boolean;
+  syncFrequencyMinutes: number;
+  lastSyncedAt?: number;
+  lastErrorMessage?: string | null;
+}
 
+export interface ZohoCustomerPayload {
+  contact_id: string;
+  contact_name: string;
+  company_name?: string;
+  contact_person?: string;
+  mobile: string;
+  email?: string;
+  gst_no?: string;
+  outstanding_receivable_amount?: number;
+  credit_limit?: number;
+  payment_terms?: number;
+}
+
+export interface ZohoInvoicePayload {
+  invoice_id: string;
+  customer_id: string;
+  customer_name: string;
+  invoice_number: string;
+  date: string;
+  due_date: string;
+  total: number;
+  balance: number;
+  currency_code?: string;
+  status: string;
+}
+
+export interface ZohoPaymentPayload {
+  payment_id: string;
+  customer_id: string;
+  customer_name: string;
+  payment_number: string;
+  invoice_numbers?: string[];
+  amount: number;
+  date: string;
+  reference_number?: string;
+  payment_mode?: string;
+}
+
+export interface ZohoWebhookPayload {
+  event: 'invoice.created' | 'invoice.updated' | 'payment.created' | 'customer.created' | 'customer.updated';
+  timestamp: number;
+  organization_id: string;
+  signature: string;
+  data: any;
+}
+
+export interface GoogleSheetsConfig {
+  spreadsheetId: string;
+  spreadsheetUrl: string;
+  sheetName: string;
+  range?: string;
+  status: IntegrationStatus;
+  apiKey?: string;
+  autoSyncInterval: 'NONE' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+  lastSyncedAt?: number;
+  nextScheduledSync?: number;
+  columnMapping: Partial<ExcelCsvColumnMapping>;
+  lastErrorMessage?: string | null;
+}
+
+export interface ExcelCsvColumnMapping {
+  customerName: string;
+  mobile: string;
+  email?: string;
+  gstin?: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  amount: string;
+  paidAmount?: string;
+  currency?: string;
+}
+
+export interface CsvValidationRow {
+  rowIndex: number;
+  raw: Record<string, string>;
+  isValid: boolean;
+  errors: string[];
+  parsedRecord?: {
+    customerName: string;
+    mobile: string;
+    email: string | null;
+    gstin: string | null;
+    invoiceNumber: string;
+    invoiceDate: string;
+    dueDate: string;
+    amount: number;
+    paidAmount: number;
+    balance: number;
+    currency: string;
+  };
+}
+
+export interface IngestionReport {
+  jobId: string;
+  tenantId: string;
+  source: 'zoho' | 'excel' | 'sheets';
+  sourceTitle: string;
+  startedAt: number;
+  completedAt: number;
+  totalProcessed: number;
+  customersUpserted: number;
+  invoicesUpserted: number;
+  paymentsUpserted?: number;
+  failedCount: number;
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+  errors: Array<{
+    row?: number;
+    recordId?: string;
+    message: string;
+  }>;
+}

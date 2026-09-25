@@ -99,5 +99,7 @@ All accounts are pre-created, verified, and mapped to the active demo tenant **A
    - **Payments & UPI** (`/payments`): View incoming payments, simulate a Razorpay webhook or record a manual bank receipt.
    - **Reconciliation Engine** (`/reconciliation`): View pending approvals, perform manual bill split allocation, or trigger simulated Tally Windows Agent sync.
    - **Collection Intelligence** (`/analytics`): View DSO, Collection Efficiency Index (CEI), portfolio risk breakdown, and prioritized follow-up queue with transparent scoring factors.
+   - **AI Copilot** (`/copilot`): Root-cause delinquency diagnosis, WhatsApp collection copy drafter, NLP PTP promise date extractor, and 30-day cash flow inflow forecaster.
+   - **Integrations & Data Sources** (`/integrations`): Zoho Books OAuth connection and bidirectional sync, Excel/CSV 4-step ingestion wizard with live column mapping and error reporting, Google Sheets auto-sync, and complete ingestion audit history.
    - **WhatsApp Reminders** (`/reminders`): Run automated sequence evaluation and log customer PTPs.
    - **Settings & Sync** (`/settings`): View Windows Agent heartbeat and simulation controls.
