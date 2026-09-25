@@ -712,3 +712,110 @@ export interface PartnerPortfolioOverview {
   clients: PartnerClientSummary[];
 }
 
+// ==========================================
+// Phase 15: Billing & Monetization Types
+// ==========================================
+
+export type SubscriptionPlanId = 'starter' | 'growth' | 'enterprise';
+export type BillingInterval = 'MONTHLY' | 'ANNUAL';
+export type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'GRACE_PERIOD' | 'CANCELLED' | 'EXPIRED';
+
+export interface SubscriptionLimits {
+  maxInvoicesPerMonth: number;
+  maxCustomers: number;
+  maxWhatsAppReminders: number;
+  maxTeamUsers: number;
+  maxDevices: number;
+}
+
+export interface SubscriptionEntitlements {
+  tallySync: boolean;
+  zohoAndSheetsIntegrations: boolean;
+  aiCopilotAssistant: boolean;
+  autoReconciliation: boolean;
+  partnerPortalAccess: boolean;
+  prioritySupport: boolean;
+  customSenderId: boolean;
+}
+
+export interface SubscriptionPlan {
+  planId: SubscriptionPlanId;
+  name: string;
+  badge?: string;
+  description: string;
+  monthlyPriceINR: number;
+  annualPriceINR: number;
+  trialDays: number;
+  limits: SubscriptionLimits;
+  entitlements: SubscriptionEntitlements;
+  features: string[];
+}
+
+export interface SubscriptionUsage {
+  invoicesCount: number;
+  customersCount: number;
+  whatsAppMessagesSent: number;
+  whatsAppLimit: number;
+  whatsAppOverageCostINR: number;
+  activeUsersCount: number;
+  activeDevicesCount: number;
+}
+
+export interface TenantSubscription {
+  subscriptionId: string;
+  tenantId: string;
+  planId: SubscriptionPlanId;
+  billingInterval: BillingInterval;
+  status: SubscriptionStatus;
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+  trialStart?: number;
+  trialEnd?: number;
+  gracePeriodEnd?: number;
+  cancelAtPeriodEnd: boolean;
+  cancelledAt?: number;
+  cancellationReason?: string;
+  usage: SubscriptionUsage;
+  paymentMethod?: {
+    type: 'UPI' | 'CARD' | 'NETBANKING' | 'NACH';
+    brandOrBank?: string;
+    last4?: string;
+    upiVpa?: string;
+  };
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface BillingInvoice {
+  invoiceId: string;
+  invoiceNumber: string;
+  tenantId: string;
+  subscriptionId: string;
+  planName: string;
+  billingInterval: BillingInterval;
+  periodStart: string;
+  periodEnd: string;
+  baseAmount: number;
+  taxRatePct: number; // 18% GST (SAC 998314)
+  taxAmount: number;
+  totalAmount: number;
+  currency: string;
+  sacCode: string;
+  status: 'PAID' | 'PENDING' | 'FAILED';
+  paymentDate?: string;
+  paymentMethod?: string;
+  utrOrReference?: string;
+  createdAt: number;
+}
+
+export interface SubscriptionWebhookEvent {
+  eventId: string;
+  event: 'subscription.activated' | 'subscription.charged' | 'subscription.halted' | 'subscription.cancelled' | 'payment.failed';
+  subscriptionId: string;
+  tenantId: string;
+  amountINR?: number;
+  data?: any;
+  timestamp: number;
+}
+
+

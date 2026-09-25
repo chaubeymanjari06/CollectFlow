@@ -20,6 +20,7 @@ import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { CopilotPage } from './pages/copilot/CopilotPage';
 import { IntegrationsPage } from './pages/integrations/IntegrationsPage';
 import { PartnerPortalPage } from './pages/partner/PartnerPortalPage';
+import { BillingPage } from './pages/billing/BillingPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 
 export const App: React.FC = () => {
@@ -62,6 +63,7 @@ export const App: React.FC = () => {
               <Route path="copilot" element={<CopilotPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="partner" element={<PartnerPortalPage />} />
+              <Route path="billing" element={<BillingPage />} />
               <Route path="team" element={<TeamManagementPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

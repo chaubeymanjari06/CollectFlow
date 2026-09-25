@@ -12,7 +12,8 @@ import {
   Clock,
   Laptop,
   FileSpreadsheet,
-  ArrowRight
+  ArrowRight,
+  Receipt,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { dbService } from '../../services/dbService';
@@ -316,6 +317,29 @@ export const SettingsPage: React.FC = () => {
           className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
         >
           Open Integrations Center
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Subscription & Plan Billing Card */}
+      <div className="bg-gradient-to-br from-indigo-900 via-brand-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-white/10 text-brand-300">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold">Subscription, Usage Limits & GST Invoices</h3>
+          </div>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Manage your Starter, Growth, or Enterprise SaaS subscription, check real-time WhatsApp usage meters, download SAC 998314 GST tax invoices, and simulate payment webhooks.
+          </p>
+        </div>
+
+        <Link
+          to="/billing"
+          className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
+        >
+          Manage Plans & Billing
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
