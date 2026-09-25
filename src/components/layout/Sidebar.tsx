@@ -18,6 +18,7 @@ import {
   Receipt,
   Activity,
   ShieldCheck,
+  Rocket,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 
@@ -38,6 +39,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Billing & Plans', to: '/billing', icon: Receipt },
     { label: 'Operations & Health', to: '/observability', icon: Activity },
     { label: 'Security & Compliance', to: '/security', icon: ShieldCheck },
+    { label: 'Pilot Operations', to: '/pilot', icon: Rocket },
     { label: 'Team & Roles', to: '/team', icon: Users },
     { label: 'Settings & Sync', to: '/settings', icon: Settings },
   ];

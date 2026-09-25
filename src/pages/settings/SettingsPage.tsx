@@ -16,6 +16,7 @@ import {
   Receipt,
   Activity,
   ShieldCheck,
+  Rocket,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { dbService } from '../../services/dbService';
@@ -388,6 +389,29 @@ export const SettingsPage: React.FC = () => {
           className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
         >
           Security & Compliance Hub
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Pilot Operations & Cohort Hub Card */}
+      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-brand-950 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-white/10 text-brand-300">
+              <Rocket className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold">Phase 18 — Pilot Launch & Operations Hub</h3>
+          </div>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Monitor real-time cohort KPIs across 38 MSMEs in Surat, Ludhiana & Peenya, control 10-account safety guardrails, and evaluate production graduation readiness.
+          </p>
+        </div>
+
+        <Link
+          to="/pilot"
+          className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
+        >
+          Pilot Operations Hub
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

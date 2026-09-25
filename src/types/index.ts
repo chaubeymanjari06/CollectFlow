@@ -1072,6 +1072,137 @@ export interface CompliancePolicyDoc {
   contentMarkdown: string;
 }
 
+// ==========================================
+// Phase 18 — Pilot Launch & Operations Hub Types
+// ==========================================
 
+export type PilotStage =
+  | 'partner_onboarding'
+  | 'merchant_onboarding'
+  | 'tally_connection'
+  | 'data_validation'
+  | 'controlled_10_account'
+  | 'full_activation'
+  | 'payment_recon_test'
+  | 'measurement_30_day'
+  | 'graduated';
 
+export interface PilotCluster {
+  id: string;
+  name: string;
+  sector: string;
+  location: string;
+  partnerCount: number;
+  merchantCount: number;
+  targetMerchants: number;
+  totalOutstanding: number;
+  totalCollected: number;
+  status: 'ACTIVE' | 'RAMPING' | 'COMPLETED';
+}
 
+export interface ControlledAccount {
+  id: string;
+  merchantId: string;
+  customerName: string;
+  phone: string;
+  outstandingBalance: number;
+  overdueDays: number;
+  reminderStatus: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
+  ptpStatus: 'NONE' | 'PROMISED' | 'HONORED' | 'BROKEN';
+  lastContactAt: string;
+  safeTestMode: boolean;
+}
+
+export interface PilotMerchant {
+  id: string;
+  businessName: string;
+  gstin: string;
+  clusterId: string;
+  clusterName: string;
+  partnerId: string;
+  partnerName: string;
+  stage: PilotStage;
+  stageProgress: number; // 0-100%
+  controlled10PilotActive: boolean;
+  controlledAccounts: ControlledAccount[];
+  tallyConnected: boolean;
+  tallyVersion: string;
+  syncSuccessRate: number;
+  invoicesSynced: number;
+  outstandingAmount: number;
+  amountCollected: number;
+  messagesDelivered: number;
+  customerResponseRate: number;
+  ptpCreationRate: number;
+  ptpSuccessRate: number;
+  paymentsDetected: number;
+  reconciliationsCompleted: number;
+  supportTickets: number;
+  churnRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  pilotStartDate: string;
+  pilotDayNumber: number; // 1-30
+  graduationScore: number; // 0-100
+  graduationEligible: boolean;
+  graduatedAt?: string;
+}
+
+export interface PilotKPIs {
+  activeBusinesses: number;
+  targetBusinessesMin: number;
+  targetBusinessesMax: number;
+  activePartners: number;
+  targetPartnersMin: number;
+  targetPartnersMax: number;
+  activeClusters: number;
+  targetClustersMin: number;
+  targetClustersMax: number;
+  successfulTallyConnections: number;
+  syncSuccessRateAvg: number;
+  totalInvoicesSynced: number;
+  totalOutstandingTracked: number;
+  totalAmountCollected: number;
+  collectionRecoveryRate: number;
+  totalMessagesDelivered: number;
+  avgResponseRate: number;
+  avgPtpCreationRate: number;
+  avgPtpSuccessRate: number;
+  totalPaymentsDetected: number;
+  totalReconciliationsCompleted: number;
+  openSupportTickets: number;
+  churnRate: number;
+}
+
+export interface PilotGraduationCriterion {
+  id: string;
+  title: string;
+  category: 'INTEGRATION' | 'DATA_VALIDATION' | 'COLLECTION' | 'RECONCILIATION' | 'OPERATIONS';
+  targetMetric: string;
+  actualMetric: string;
+  status: 'PASSED' | 'IN_PROGRESS' | 'FAILED';
+  description: string;
+}
+
+export interface PilotSupportTicket {
+  ticketId: string;
+  merchantId: string;
+  merchantName: string;
+  cluster: string;
+  title: string;
+  category: 'TALLY_SYNC' | 'WHATSAPP_DELIVERY' | 'PAYMENT_QR' | 'RECON_DISCREPANCY' | 'TRAINING';
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  createdAt: string;
+  resolvedAt?: string;
+  slaRemainingHours: number;
+}
+
+export interface DailyPilotMeasurement {
+  day: number;
+  date: string;
+  invoicesSynced: number;
+  messagesSent: number;
+  responsesReceived: number;
+  ptpsCreated: number;
+  amountCollected: number;
+  activeMerchants: number;
+}
