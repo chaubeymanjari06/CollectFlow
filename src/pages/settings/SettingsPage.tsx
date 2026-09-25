@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Receipt,
   Activity,
+  ShieldCheck,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { dbService } from '../../services/dbService';
@@ -364,6 +365,29 @@ export const SettingsPage: React.FC = () => {
           className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
         >
           Open Operations Center
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Security & Compliance Hardening Card */}
+      <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-teal-950 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-white/10 text-emerald-300">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold">Security, Compliance & DPDP Act 2023 Hardening</h3>
+          </div>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Run automated multi-tenant isolation attack probes, rotate cryptographic API tokens, view immutable audit trails, and request DPDP data takeout archives.
+          </p>
+        </div>
+
+        <Link
+          to="/security"
+          className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
+        >
+          Security & Compliance Hub
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

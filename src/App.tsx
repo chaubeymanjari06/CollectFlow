@@ -22,6 +22,7 @@ import { IntegrationsPage } from './pages/integrations/IntegrationsPage';
 import { PartnerPortalPage } from './pages/partner/PartnerPortalPage';
 import { BillingPage } from './pages/billing/BillingPage';
 import { ObservabilityPage } from './pages/observability/ObservabilityPage';
+import { SecurityPage } from './pages/security/SecurityPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 
 export const App: React.FC = () => {
@@ -66,6 +67,7 @@ export const App: React.FC = () => {
               <Route path="partner" element={<PartnerPortalPage />} />
               <Route path="billing" element={<BillingPage />} />
               <Route path="observability" element={<ObservabilityPage />} />
+              <Route path="security" element={<SecurityPage />} />
               <Route path="team" element={<TeamManagementPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>

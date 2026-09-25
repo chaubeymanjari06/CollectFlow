@@ -955,5 +955,123 @@ export interface TenantDiagnosticBundle {
   systemMetrics: ObservabilityMetrics;
 }
 
+// ==========================================
+// Phase 17: Security & Compliance Types
+// ==========================================
+
+export type StrideCategory =
+  | 'SPOOFING'
+  | 'TAMPERING'
+  | 'REPUDIATION'
+  | 'INFORMATION_DISCLOSURE'
+  | 'DENIAL_OF_SERVICE'
+  | 'ELEVATION_OF_PRIVILEGE';
+
+export interface ThreatModelItem {
+  threatId: string;
+  category: StrideCategory;
+  title: string;
+  attackVector: string;
+  impact: string;
+  mitigationControl: string;
+  status: 'MITIGATED' | 'IN_REVIEW' | 'ACCEPTED';
+  owaspRef: string;
+}
+
+export interface SecurityAuditEntry {
+  auditLogId: string;
+  tenantId: string;
+  actorId: string;
+  actorEmail: string;
+  action:
+    | 'INVOICE_SYNCED'
+    | 'PAYMENT_RECEIVED'
+    | 'PTP_CREATED'
+    | 'RECONCILIATION_APPROVED'
+    | 'SECRET_ROTATED'
+    | 'TENANT_ISOLATION_VERIFIED'
+    | 'DATA_EXPORT_REQUESTED'
+    | 'DATA_DELETION_REQUESTED'
+    | 'LOGIN_MFA_SUCCESS';
+  resourceType: 'TENANT' | 'INVOICE' | 'PAYMENT' | 'CUSTOMER' | 'SECRET' | 'DATA_EXPORT';
+  resourceId: string;
+  ipAddress: string;
+  userAgent?: string;
+  timestamp: number;
+  details?: Record<string, any>;
+}
+
+export type SecretType =
+  | 'TALLY_AGENT_AUTH_TOKEN'
+  | 'RAZORPAY_WEBHOOK_SECRET'
+  | 'WHATSAPP_BUSINESS_TOKEN'
+  | 'PARTNER_API_KEY';
+
+export interface RotatableSecret {
+  secretId: string;
+  tenantId: string;
+  type: SecretType;
+  name: string;
+  maskedValue: string;
+  lastRotatedAt: number;
+  expiresAt: number;
+  status: 'ACTIVE' | 'ROTATED' | 'REVOKED';
+}
+
+export interface RateLimitStatus {
+  endpoint: string;
+  maxRequestsPerMinute: number;
+  currentRequests: number;
+  blockedRequestsCount: number;
+  windowSeconds: number;
+  status: 'HEALTHY' | 'THROTTLED' | 'BLOCKED';
+}
+
+export interface PenetrationTestFinding {
+  findingId: string;
+  vulnerability: string;
+  cveRef?: string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  component: string;
+  status: 'REMEDIATED' | 'VERIFIED';
+  remediationDetails: string;
+  testedAt: number;
+}
+
+export interface DataDeletionRequest {
+  requestId: string;
+  tenantId: string;
+  requestedBy: string;
+  scope: 'CUSTOMER_LEDGERS' | 'AUDIT_LOGS' | 'FULL_TENANT_DESTRUCTION';
+  status: 'REQUESTED' | 'PROCESSING' | 'COMPLETED';
+  retentionWindowDays: number;
+  targetExecutionDate: string;
+  createdAt: number;
+  completedAt?: number;
+}
+
+export interface DataExportRequest {
+  requestId: string;
+  tenantId: string;
+  requestedBy: string;
+  format: 'JSON' | 'CSV_ZIP';
+  status: 'READY' | 'PROCESSING';
+  downloadUrl?: string;
+  fileSizeBytes: number;
+  expiresAt: number;
+  createdAt: number;
+}
+
+export interface CompliancePolicyDoc {
+  policyId: 'PRIVACY_POLICY' | 'TERMS_OF_SERVICE' | 'DPA_AGREEMENT' | 'VENDOR_REVIEW';
+  title: string;
+  version: string;
+  effectiveDate: string;
+  complianceStandards: string[];
+  summary: string;
+  contentMarkdown: string;
+}
+
+
 
 
