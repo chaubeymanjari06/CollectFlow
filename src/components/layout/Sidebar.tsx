@@ -14,6 +14,7 @@ import {
   Target,
   Sparkles,
   FileSpreadsheet,
+  Briefcase,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 
@@ -30,6 +31,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Collection Intelligence', to: '/analytics', icon: Target },
     { label: 'AI Copilot', to: '/copilot', icon: Sparkles },
     { label: 'Integrations & Import', to: '/integrations', icon: FileSpreadsheet },
+    { label: 'CA / Partner Portal', to: '/partner', icon: Briefcase },
     { label: 'Team & Roles', to: '/team', icon: Users },
     { label: 'Settings & Sync', to: '/settings', icon: Settings },
   ];

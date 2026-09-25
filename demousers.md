@@ -101,5 +101,6 @@ All accounts are pre-created, verified, and mapped to the active demo tenant **A
    - **Collection Intelligence** (`/analytics`): View DSO, Collection Efficiency Index (CEI), portfolio risk breakdown, and prioritized follow-up queue with transparent scoring factors.
    - **AI Copilot** (`/copilot`): Root-cause delinquency diagnosis, WhatsApp collection copy drafter, NLP PTP promise date extractor, and 30-day cash flow inflow forecaster.
    - **Integrations & Data Sources** (`/integrations`): Zoho Books OAuth connection and bidirectional sync, Excel/CSV 4-step ingestion wizard with live column mapping and error reporting, Google Sheets auto-sync, and complete ingestion audit history.
+   - **CA / Partner Portal** (`/partner`): Multi-client portfolio dashboard, client health index diagnostics, onboarding pipeline, 20% recurring referral commission tracking, support tickets, and Section 43B(h) compliance reports.
    - **WhatsApp Reminders** (`/reminders`): Run automated sequence evaluation and log customer PTPs.
    - **Settings & Sync** (`/settings`): View Windows Agent heartbeat and simulation controls.

@@ -596,3 +596,119 @@ export interface IngestionReport {
     message: string;
   }>;
 }
+
+// ==========================================
+// Phase 14: CA / Tally Partner Portal Types
+// ==========================================
+
+export type PartnerType = 'CA' | 'TALLY_PARTNER' | 'TAX_CONSULTANT' | 'FINANCIAL_ADVISOR';
+export type PartnerTier = 'SILVER' | 'GOLD' | 'PLATINUM';
+export type OnboardingStage = 'INVITE_SENT' | 'AGENT_INSTALLED' | 'TALLY_CONNECTED' | 'SYNC_COMPLETE' | 'LIVE';
+export type HealthTier = 'EXCELLENT' | 'HEALTHY' | 'NEEDS_ATTENTION' | 'CRITICAL';
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type TicketCategory = 'TALLY_SYNC' | 'INTEGRATIONS' | 'PAYMENTS' | 'BILLING' | 'GENERAL';
+
+export interface PartnerProfile {
+  partnerId: string;
+  userId: string;
+  firmName: string;
+  partnerType: PartnerType;
+  membershipNumber?: string;
+  contactPerson: string;
+  email: string;
+  mobile: string;
+  city: string;
+  referralCode: string;
+  commissionRatePct: number;
+  tier: PartnerTier;
+  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  payoutUpiOrBank?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ClientHealthIndex {
+  score: number; // 0 - 100
+  tier: HealthTier;
+  reasons: string[];
+  recommendedAction: string;
+}
+
+export interface PartnerClientSummary {
+  tenantId: string;
+  clientName: string;
+  legalName?: string;
+  gstin?: string | null;
+  city: string;
+  tallyConnected: boolean;
+  agentStatus: 'ONLINE' | 'OFFLINE' | 'NOT_PAIRED';
+  lastSyncTime?: number | null;
+  totalReceivables: number;
+  overdueAmount: number;
+  overdueRatioPct: number;
+  dso: number;
+  activeInvoicesCount: number;
+  health: ClientHealthIndex;
+  monthlyBillingPlan: string;
+  partnerMonthlyCommission: number;
+}
+
+export interface PartnerClientOnboarding {
+  invitationId: string;
+  partnerId: string;
+  clientName: string;
+  contactPerson: string;
+  email: string;
+  mobile: string;
+  gstin?: string;
+  city: string;
+  expectedMonthlyVolume: number;
+  stage: OnboardingStage;
+  tenantId?: string;
+  token: string;
+  invitedAt: number;
+  connectedAt?: number;
+  notes?: string;
+}
+
+export interface PartnerSupportTicket {
+  ticketId: string;
+  partnerId: string;
+  partnerName: string;
+  clientTenantId?: string;
+  clientName?: string;
+  title: string;
+  category: TicketCategory;
+  priority: TicketPriority;
+  status: TicketStatus;
+  description: string;
+  resolution?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PartnerPayout {
+  payoutId: string;
+  partnerId: string;
+  month: string;
+  amount: number;
+  clientCount: number;
+  status: 'PAID' | 'PROCESSING' | 'UPCOMING';
+  utr?: string;
+  payoutDate?: string;
+  destination: string;
+}
+
+export interface PartnerPortfolioOverview {
+  totalClients: number;
+  activeClients: number;
+  onboardingClients: number;
+  totalReceivablesUnderManagement: number;
+  totalOverdueUnderManagement: number;
+  averagePortfolioDso: number;
+  totalCommissionEarned: number;
+  pendingPayoutAmount: number;
+  clients: PartnerClientSummary[];
+}
+
