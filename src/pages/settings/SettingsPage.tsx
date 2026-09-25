@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   ArrowRight,
   Receipt,
+  Activity,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { dbService } from '../../services/dbService';
@@ -340,6 +341,29 @@ export const SettingsPage: React.FC = () => {
           className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
         >
           Manage Plans & Billing
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Observability & Mission Control Card */}
+      <div className="bg-gradient-to-br from-purple-950 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-white/10 text-purple-300">
+              <Activity className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold">Observability, Health & Operations Mission Control</h3>
+          </div>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Inspect real-time Cloud Functions logs, probe Windows Agent latency & ODBC port status, review active system alerts, and trigger operational retries.
+          </p>
+        </div>
+
+        <Link
+          to="/observability"
+          className="px-5 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 transition shadow-md flex items-center gap-2 shrink-0 self-start md:self-auto"
+        >
+          Open Operations Center
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

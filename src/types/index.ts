@@ -818,4 +818,142 @@ export interface SubscriptionWebhookEvent {
   timestamp: number;
 }
 
+// ==========================================
+// Phase 16: Observability & Operations Types
+// ==========================================
+
+export type FunctionLogLevel = 'INFO' | 'WARN' | 'ERROR';
+
+export type CloudFunctionName =
+  | 'onTallySyncBatch'
+  | 'sendWhatsAppReminder'
+  | 'processPaymentWebhook'
+  | 'autoReconcilePayment'
+  | 'generateDailyCollectionDigest'
+  | 'tallyWriteBackQueue';
+
+export interface CloudFunctionLog {
+  logId: string;
+  functionName: CloudFunctionName;
+  executionId: string;
+  tenantId: string;
+  level: FunctionLogLevel;
+  message: string;
+  durationMs: number;
+  memoryUsageMB: number;
+  timestamp: number;
+  metadata?: Record<string, any>;
+}
+
+export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
+
+export type AlertSource =
+  | 'TALLY_AGENT'
+  | 'SYNC_ENGINE'
+  | 'WHATSAPP_GATEWAY'
+  | 'PAYMENT_WEBHOOK'
+  | 'RECONCILIATION'
+  | 'CLOUD_FUNCTION'
+  | 'DATABASE';
+
+export interface SystemAlert {
+  alertId: string;
+  tenantId: string;
+  source: AlertSource;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  errorCode: string;
+  resolved: boolean;
+  resolvedAt?: number;
+  createdAt: number;
+}
+
+export interface AgentDiagnosticProbe {
+  deviceId: string;
+  deviceName: string;
+  tallyHost: string;
+  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE';
+  lastHeartbeat: number;
+  latencyMs: number;
+  odbcConnection: boolean;
+  xmlEndpointStatus: 'OK' | 'PORT_CLOSED' | 'TIMEOUT' | 'UNKNOWN';
+  activeCompany: string;
+  agentVersion: string;
+  osPlatform: string;
+  memoryUsagePct: number;
+  cpuUsagePct: number;
+  queueDepth: number;
+}
+
+export interface ObservabilityMetrics {
+  healthScore: number; // 0 - 100
+  apiHealth: {
+    requestsLast24h: number;
+    errorRate4xxPct: number;
+    errorRate5xxPct: number;
+    p50LatencyMs: number;
+    p95LatencyMs: number;
+    p99LatencyMs: number;
+  };
+  whatsAppDelivery: {
+    totalDispatched: number;
+    deliveredCount: number;
+    deliveryRatePct: number;
+    readCount: number;
+    failedCount: number;
+    bouncedCount: number;
+    templateRejections: number;
+  };
+  paymentWebhooks: {
+    totalReceived: number;
+    processedCount: number;
+    failedSignatures: number;
+    duplicateDropped: number;
+    avgProcessingMs: number;
+  };
+  reconciliationHealth: {
+    autoMatchedCount: number;
+    pendingReviewCount: number;
+    unmatchedCount: number;
+    failureExceptionsCount: number;
+  };
+  databaseUsage: {
+    totalNodes: number;
+    estimatedSizeMB: number;
+    connectionsActive: number;
+    readsPerSec: number;
+    writesPerSec: number;
+  };
+  cloudFunctions: {
+    invocationsCount: number;
+    avgExecutionDurationMs: number;
+    errorCount: number;
+    errorRatePct: number;
+    coldStartsCount: number;
+  };
+}
+
+export interface StandardErrorCode {
+  code: string;
+  category: 'TALLY' | 'WHATSAPP' | 'PAYMENTS' | 'RECONCILIATION' | 'SYSTEM';
+  title: string;
+  description: string;
+  suggestedRemediation: string;
+  severity: AlertSeverity;
+}
+
+export interface TenantDiagnosticBundle {
+  exportedAt: string;
+  tenantId: string;
+  tenantName: string;
+  healthScore: number;
+  agentStatus: AgentDiagnosticProbe[];
+  recentAlerts: SystemAlert[];
+  recentSyncHistory: SyncJob[];
+  recentFunctionLogs: CloudFunctionLog[];
+  systemMetrics: ObservabilityMetrics;
+}
+
+
 

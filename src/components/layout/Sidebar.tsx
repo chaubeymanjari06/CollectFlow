@@ -16,6 +16,7 @@ import {
   FileSpreadsheet,
   Briefcase,
   Receipt,
+  Activity,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 
@@ -34,6 +35,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Integrations & Import', to: '/integrations', icon: FileSpreadsheet },
     { label: 'CA / Partner Portal', to: '/partner', icon: Briefcase },
     { label: 'Billing & Plans', to: '/billing', icon: Receipt },
+    { label: 'Operations & Health', to: '/observability', icon: Activity },
     { label: 'Team & Roles', to: '/team', icon: Users },
     { label: 'Settings & Sync', to: '/settings', icon: Settings },
   ];
