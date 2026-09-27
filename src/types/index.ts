@@ -7,6 +7,9 @@ export interface UserProfile {
   mobile?: string | null;
   photoUrl?: string | null;
   defaultTenantId?: string | null;
+  companySetupCompleted?: boolean;
+  companySetupDate?: number | null;
+  tenants?: Record<string, { tenantId: string; role?: UserRole; name?: string; status?: string; createdAt?: number }>;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: number;
   updatedAt: number;

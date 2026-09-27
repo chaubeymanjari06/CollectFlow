@@ -131,13 +131,38 @@ export const tenantService = {
       updatedAt: now,
     });
 
-    // Update user default tenant if empty
-    const userProfile = await dbService.get<{ defaultTenantId?: string }>(`users/${userId}`);
-    if (!userProfile?.defaultTenantId) {
-      await dbService.update(`users/${userId}`, { defaultTenantId: tenantId });
-    }
+    // Save company into owner user profile and direct index for further logins
+    await dbService.set(`users/${userId}/tenants/${tenantId}`, {
+      tenantId,
+      role: 'OWNER',
+      name: data.name,
+      createdAt: now,
+    });
+
+    await dbService.set(`userTenants/${userId}/${tenantId}`, {
+      tenantId,
+      role: 'OWNER',
+      name: data.name,
+      status: 'ACTIVE',
+      createdAt: now,
+    });
+
+    await dbService.update(`users/${userId}`, {
+      defaultTenantId: tenantId,
+      companySetupCompleted: true,
+      companySetupDate: now,
+      updatedAt: now,
+    });
 
     return { tenant, membership };
+  },
+
+  async updateTenant(tenantId: string, data: Partial<Tenant>): Promise<Tenant | null> {
+    await dbService.update(`tenants/${tenantId}`, {
+      ...data,
+      updatedAt: Date.now(),
+    });
+    return await dbService.get<Tenant>(`tenants/${tenantId}`);
   },
 
   async getTenant(tenantId: string): Promise<Tenant | null> {
@@ -145,21 +170,104 @@ export const tenantService = {
   },
 
   async getUserMemberships(userId: string): Promise<TenantMembership[]> {
-    // In RTDB, query memberships node for user memberships
-    const allMemberships = await dbService.get<Record<string, Record<string, TenantMembership>>>('memberships');
-    if (!allMemberships) return [];
+    const membershipsMap: Record<string, TenantMembership> = {};
 
-    const userMemberships: TenantMembership[] = [];
-    Object.entries(allMemberships).forEach(([tenantId, usersMap]) => {
-      if (usersMap && usersMap[userId] && usersMap[userId].status === 'ACTIVE') {
-        userMemberships.push({
-          ...usersMap[userId],
-          tenantId,
+    // 1. Direct index lookup on user profile (avoids reading restricted global /memberships node)
+    try {
+      const userProfile = await dbService.get<{
+        defaultTenantId?: string | null;
+        tenants?: Record<string, { tenantId: string; role?: UserRole; name?: string; status?: string }>;
+      }>(`users/${userId}`);
+
+      if (userProfile?.tenants) {
+        for (const [tId, tData] of Object.entries(userProfile.tenants)) {
+          const directMem = await dbService.get<TenantMembership>(`memberships/${tId}/${userId}`);
+          if (directMem && directMem.status === 'ACTIVE') {
+            membershipsMap[tId] = { ...directMem, tenantId: tId };
+          } else {
+            const role = tData?.role || 'OWNER';
+            membershipsMap[tId] = {
+              tenantId: tId,
+              userId,
+              role,
+              permissions: getDefaultPermissions(role),
+              status: 'ACTIVE',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            };
+          }
+        }
+      }
+
+      if (userProfile?.defaultTenantId && !membershipsMap[userProfile.defaultTenantId]) {
+        const defId = userProfile.defaultTenantId;
+        const directMem = await dbService.get<TenantMembership>(`memberships/${defId}/${userId}`);
+        if (directMem && directMem.status === 'ACTIVE') {
+          membershipsMap[defId] = { ...directMem, tenantId: defId };
+        } else {
+          membershipsMap[defId] = {
+            tenantId: defId,
+            userId,
+            role: 'OWNER',
+            permissions: getDefaultPermissions('OWNER'),
+            status: 'ACTIVE',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Direct user profile tenant lookup warning:', err);
+    }
+
+    // 2. Direct lookup on userTenants node
+    try {
+      const userTenantsIndex = await dbService.get<Record<string, { role?: UserRole; status?: string }>>(
+        `userTenants/${userId}`
+      );
+      if (userTenantsIndex) {
+        for (const [tId, tData] of Object.entries(userTenantsIndex)) {
+          if (!membershipsMap[tId]) {
+            const directMem = await dbService.get<TenantMembership>(`memberships/${tId}/${userId}`);
+            if (directMem && directMem.status === 'ACTIVE') {
+              membershipsMap[tId] = { ...directMem, tenantId: tId };
+            } else {
+              const role = tData?.role || 'OWNER';
+              membershipsMap[tId] = {
+                tenantId: tId,
+                userId,
+                role,
+                permissions: getDefaultPermissions(role),
+                status: 'ACTIVE',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              };
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('userTenants index lookup warning:', err);
+    }
+
+    // 3. Fallback: Query root memberships node if allowed (e.g. mock unit tests / admin context)
+    try {
+      const allMemberships = await dbService.get<Record<string, Record<string, TenantMembership>>>('memberships');
+      if (allMemberships) {
+        Object.entries(allMemberships).forEach(([tenantId, usersMap]) => {
+          if (usersMap && usersMap[userId] && usersMap[userId].status === 'ACTIVE') {
+            membershipsMap[tenantId] = {
+              ...usersMap[userId],
+              tenantId,
+            };
+          }
         });
       }
-    });
+    } catch {
+      // Expected when root /memberships node read is restricted by security rules
+    }
 
-    return userMemberships;
+    return Object.values(membershipsMap);
   },
 
   async inviteUser(
