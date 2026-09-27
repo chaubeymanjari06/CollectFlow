@@ -14,6 +14,10 @@ import {
   Clock,
   ArrowUpRight,
   Filter,
+  Smartphone,
+  QrCode,
+  Calendar,
+  Check
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -37,6 +41,10 @@ export const PaymentsPage: React.FC = () => {
   // Modals
   const [showWebhookModal, setShowWebhookModal] = useState(false);
   const [showManualReceiptModal, setShowManualReceiptModal] = useState(false);
+  const [showUpiSimulator, setShowUpiSimulator] = useState(false);
+  const [simulatorTdsRate, setSimulatorTdsRate] = useState<number>(0);
+  const [simulatorPtpDate, setSimulatorPtpDate] = useState('');
+  const [simulatorPtpSuccess, setSimulatorPtpSuccess] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Webhook Form State
@@ -228,7 +236,14 @@ export const PaymentsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowUpiSimulator(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold shadow-sm hover:bg-emerald-100 transition"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+            Customer 1-Tap UPI Simulator
+          </button>
           <button
             onClick={() => setShowWebhookModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-semibold shadow-sm hover:from-blue-700 hover:to-indigo-700 transition"
@@ -744,6 +759,196 @@ export const PaymentsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Customer 1-Tap UPI Payment Simulator Modal */}
+      {showUpiSimulator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-slate-900 rounded-[32px] p-3 shadow-2xl border-4 border-slate-700 animate-in fade-in zoom-in-95">
+            {/* Phone Screen Mock */}
+            <div className="bg-white rounded-[24px] p-5 text-xs text-slate-800 space-y-4 max-h-[85vh] overflow-y-auto">
+              {/* Phone Status Header */}
+              <div className="flex items-center justify-between text-[10px] text-slate-400 border-b pb-2">
+                <span>9:41 AM</span>
+                <span className="font-semibold text-brand-600">CollectFlow Instant UPI</span>
+                <button
+                  onClick={() => setShowUpiSimulator(false)}
+                  className="text-slate-400 hover:text-slate-700 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Merchant Header */}
+              <div className="text-center space-y-1">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600 font-bold text-lg shadow-sm">
+                  {activeTenant?.name?.charAt(0) || 'A'}
+                </div>
+                <div className="font-bold text-sm text-slate-900 flex items-center justify-center gap-1">
+                  {activeTenant?.name || 'Apex Steel Industries'}
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 fill-emerald-100" />
+                </div>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  Verified MSME Merchant • GSTIN Verified
+                </div>
+              </div>
+
+              {/* Bill & Credit Note Breakdown */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>Invoice #INV-2026-089:</span>
+                  <span>₹50,000</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-emerald-700 font-medium">
+                  <span>Goods Return (Credit Note):</span>
+                  <span>-₹5,000</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-800 font-semibold pt-1 border-t border-slate-200">
+                  <span>Net Bill Amount:</span>
+                  <span>₹45,000</span>
+                </div>
+              </div>
+
+              {/* Statutory TDS Deduction Toggle */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-700">
+                  Tax Withholding (TDS) under Income Tax Act:
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setSimulatorTdsRate(0)}
+                    className={`py-1.5 rounded-lg font-bold border transition ${
+                      simulatorTdsRate === 0
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    No TDS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSimulatorTdsRate(0.001)}
+                    className={`py-1.5 rounded-lg font-bold border transition ${
+                      simulatorTdsRate === 0.001
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    0.1% (194Q)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSimulatorTdsRate(0.01)}
+                    className={`py-1.5 rounded-lg font-bold border transition ${
+                      simulatorTdsRate === 0.01
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    1.0% (194C)
+                  </button>
+                </div>
+              </div>
+
+              {/* Total Payable Box */}
+              {(() => {
+                const tdsDeducted = Math.round(45000 * simulatorTdsRate);
+                const finalPayable = 45000 - tdsDeducted;
+                return (
+                  <div className="p-3 bg-brand-50/60 rounded-xl border border-brand-100 text-center">
+                    <div className="text-[10px] text-brand-700 font-semibold uppercase">
+                      Total Payable Amount
+                    </div>
+                    <div className="text-2xl font-extrabold text-brand-950 mt-0.5">
+                      ₹{finalPayable.toLocaleString('en-IN')}
+                    </div>
+                    {tdsDeducted > 0 && (
+                      <div className="text-[10px] text-teal-700 mt-0.5 font-medium">
+                        (₹{tdsDeducted} TDS deducted. Supplier will receive TDS pending status)
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 1-Tap UPI Apps Grid */}
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold uppercase text-slate-400 text-center">
+                  1-Tap Instant Mobile UPI Checkout
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() =>
+                      alert('Simulating direct launch of Google Pay with upi://pay intent URL!')
+                    }
+                    className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-1.5 font-bold text-xs transition shadow-sm"
+                  >
+                    <span className="text-blue-600 font-extrabold">G</span>Pay
+                  </button>
+                  <button
+                    onClick={() =>
+                      alert('Simulating direct launch of PhonePe with upi://pay intent URL!')
+                    }
+                    className="p-2.5 rounded-xl border border-purple-200 hover:bg-purple-50 flex items-center justify-center gap-1.5 font-bold text-xs text-purple-700 transition shadow-sm"
+                  >
+                    PhonePe
+                  </button>
+                  <button
+                    onClick={() =>
+                      alert('Simulating direct launch of Paytm with upi://pay intent URL!')
+                    }
+                    className="p-2.5 rounded-xl border border-sky-200 hover:bg-sky-50 flex items-center justify-center gap-1.5 font-bold text-xs text-sky-700 transition shadow-sm"
+                  >
+                    Paytm
+                  </button>
+                  <button
+                    onClick={() =>
+                      alert('Simulating direct launch of BHIM UPI with upi://pay intent URL!')
+                    }
+                    className="p-2.5 rounded-xl border border-emerald-200 hover:bg-emerald-50 flex items-center justify-center gap-1.5 font-bold text-xs text-emerald-700 transition shadow-sm"
+                  >
+                    BHIM UPI
+                  </button>
+                </div>
+              </div>
+
+              {/* Zero-Login PTP Promise */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="font-semibold text-slate-700 text-[11px] flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  Need more time? Commit a payment date:
+                </div>
+                {simulatorPtpSuccess ? (
+                  <div className="p-2 bg-emerald-50 text-emerald-800 rounded-lg text-[10px] font-bold">
+                    ✓ Promise recorded! Automated WhatsApp reminders paused until {simulatorPtpDate}.
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={simulatorPtpDate}
+                      onChange={(e) => setSimulatorPtpDate(e.target.value)}
+                      className="flex-1 px-2 py-1 rounded-lg border border-slate-200 text-xs focus:ring-1 focus:ring-brand-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!simulatorPtpDate}
+                      onClick={() => {
+                        setSimulatorPtpSuccess(true);
+                        setTimeout(() => setSimulatorPtpSuccess(false), 3000);
+                      }}
+                      className="px-3 py-1 bg-slate-900 text-white rounded-lg font-semibold text-xs disabled:opacity-40"
+                    >
+                      Commit
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

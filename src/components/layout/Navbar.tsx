@@ -1,10 +1,19 @@
 import React from 'react';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell, Languages } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { CompanySwitcher } from './CompanySwitcher';
+import { AppLanguage } from '../../types';
 
 export const Navbar: React.FC = () => {
   const { userProfile, currentUser, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
+
+  const languages: Array<{ code: AppLanguage; label: string }> = [
+    { code: 'en', label: 'English' },
+    { code: 'hi', label: 'हिन्दी' },
+    { code: 'gu', label: 'ગુજરાતી' },
+  ];
 
   return (
     <header className="h-16 border-b border-slate-200 bg-white sticky top-0 z-30 flex items-center justify-between px-6">
@@ -13,6 +22,26 @@ export const Navbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Phase 19: Vernacular Language Toggle */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+          <Languages className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5" />
+          {languages.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setLanguage(l.code)}
+              className={`px-2 py-1 rounded-lg transition ${
+                language === l.code
+                  ? 'bg-white text-brand-700 shadow-sm font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-6 w-px bg-slate-200 mx-1" />
+
         <button
           title="Notifications"
           className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition relative"

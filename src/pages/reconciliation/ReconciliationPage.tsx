@@ -99,6 +99,24 @@ export const ReconciliationPage: React.FC = () => {
     }
   };
 
+  const handleApproveWithTds = async (recId: string) => {
+    if (!activeTenant) return;
+    try {
+      await reconciliationService.approveReconciliation(
+        activeTenant.tenantId,
+        recId,
+        userProfile?.name || 'Accountant',
+        { settleWithTdsPending: true }
+      );
+      setActionNotice(
+        `Smart TDS Match Approved! Invoice marked fully settled with TDS Certificate Pending, and Tally Receipt + TDS adjustment voucher queued.`
+      );
+      await loadData();
+    } catch (err: any) {
+      alert(`TDS Approval failed: ${err.message}`);
+    }
+  };
+
   const handleReject = async (recId: string) => {
     if (!activeTenant) return;
     if (!confirm('Are you sure you want to reject this match suggestion?')) return;
@@ -370,78 +388,107 @@ export const ReconciliationPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {pendingApprovals.map((rec) => (
-                <div
-                  key={rec.reconciliationId}
-                  className="bg-white rounded-2xl border border-amber-200/80 shadow-sm p-5 space-y-4"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
-                          {rec.confidenceScore}% Confidence Match
-                        </span>
-                        <span className="text-[11px] font-mono text-slate-500 uppercase">
-                          Rule: {rec.matchRule}
-                        </span>
+              {pendingApprovals.map((rec) => {
+                const hasTds = rec.matchRule === 'SMART_TDS_MATCH' || Boolean(rec.tdsDetected);
+                return (
+                  <div
+                    key={rec.reconciliationId}
+                    className={`bg-white rounded-2xl border shadow-sm p-5 space-y-4 ${
+                      hasTds ? 'border-teal-300 ring-1 ring-teal-200/50' : 'border-amber-200/80'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            hasTds ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {hasTds ? '🟢 Smart TDS Match' : `${rec.confidenceScore}% Confidence Match`}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-500 uppercase">
+                            Rule: {rec.matchRule}
+                          </span>
+                        </div>
+                        <div className="font-bold text-slate-900 text-sm mt-1">
+                          Customer: {rec.customerName}
+                        </div>
                       </div>
-                      <div className="font-bold text-slate-900 text-sm mt-1">
-                        Customer: {rec.customerName}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleReject(rec.reconciliationId)}
-                        className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition"
-                      >
-                        <X className="w-3.5 h-3.5" /> Reject
-                      </button>
-                      <button
-                        onClick={() => handleApprove(rec.reconciliationId)}
-                        className="flex items-center gap-1 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow transition"
-                      >
-                        <Check className="w-3.5 h-3.5" /> Approve Match
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="text-[11px] text-slate-400 font-semibold uppercase">
-                        Incoming Payment Details
-                      </div>
-                      <div className="text-base font-bold text-slate-900 mt-1">
-                        ₹{rec.paymentAmount.toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-slate-500 text-[11px] mt-0.5">
-                        Payment Ref: {rec.paymentId}
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="text-[11px] text-slate-400 font-semibold uppercase">
-                        Suggested Allocations ({rec.allocations.length} bills)
-                      </div>
-                      <div className="mt-2 space-y-1.5">
-                        {rec.allocations.map((alloc) => (
-                          <div
-                            key={alloc.invoiceId}
-                            className="flex items-center justify-between text-[11px]"
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleReject(rec.reconciliationId)}
+                          className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-semibold transition"
+                        >
+                          <X className="w-3.5 h-3.5" /> Reject
+                        </button>
+                        {hasTds && (
+                          <button
+                            onClick={() => handleApproveWithTds(rec.reconciliationId)}
+                            className="flex items-center gap-1 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow transition"
+                            title="Auto-queue TDS certificate ledger adjustment in Tally"
                           >
-                            <span className="font-semibold text-slate-800">
-                              {alloc.invoiceNumber}
-                            </span>
-                            <span className="font-bold text-emerald-700">
-                              Allocated: ₹{alloc.allocatedAmount.toLocaleString('en-IN')}
-                            </span>
+                            <Check className="w-3.5 h-3.5" /> Settle with TDS Certificate Pending
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleApprove(rec.reconciliationId)}
+                          className="flex items-center gap-1 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow transition"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Approve Match
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="text-[11px] text-slate-400 font-semibold uppercase">
+                          Incoming Payment Details
+                        </div>
+                        <div className="text-base font-bold text-slate-900 mt-1">
+                          ₹{rec.paymentAmount.toLocaleString('en-IN')}
+                        </div>
+                        <div className="text-slate-500 text-[11px] mt-0.5">
+                          Payment Ref: {rec.paymentId}
+                        </div>
+                        {hasTds && (
+                          <div className="mt-2 p-2 bg-teal-50 border border-teal-100 rounded-lg text-[10px] text-teal-800 font-medium">
+                            💡 Incoming payment equals invoice less statutory TDS ({rec.tdsPercentage || '0.1'}% {rec.tdsSection || 'Sec 194Q'}). Approving creates receipt voucher + TDS pending ledger entry in Tally.
                           </div>
-                        ))}
+                        )}
+                      </div>
+
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="text-[11px] text-slate-400 font-semibold uppercase">
+                          Suggested Allocations ({rec.allocations.length} bills)
+                        </div>
+                        <div className="mt-2 space-y-1.5">
+                          {rec.allocations.map((alloc) => (
+                            <div
+                              key={alloc.invoiceId}
+                              className="p-1.5 bg-white rounded-lg border border-slate-100 text-[11px] space-y-0.5"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-slate-800">
+                                  {alloc.invoiceNumber}
+                                </span>
+                                <span className="font-bold text-emerald-700">
+                                  Allocated: ₹{alloc.allocatedAmount.toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                              {alloc.tdsDeducted && alloc.tdsDeducted > 0 ? (
+                                <div className="flex items-center justify-between text-[10px] text-teal-700 font-medium">
+                                  <span>TDS ({alloc.tdsSection || rec.tdsSection || 'Sec 194Q'}):</span>
+                                  <span>₹{alloc.tdsDeducted.toLocaleString('en-IN')}</span>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

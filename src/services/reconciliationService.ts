@@ -18,6 +18,10 @@ export interface EvaluatedMatchResult {
   suggestedAllocations: PaymentAllocation[];
   customerId: string;
   customerName: string;
+  tdsDetected?: boolean;
+  tdsPercentage?: number;
+  tdsAmount?: number;
+  tdsSection?: '194Q' | '194C' | '194J';
 }
 
 export const reconciliationService = {
@@ -28,9 +32,10 @@ export const reconciliationService = {
    * Hierarchy:
    * 1. EXACT_INVOICE_REF (100%): Exact invoice number match in payment order/reference/notes
    * 2. EXACT_AMOUNT_MATCH (95%): Customer + exact open invoice balance match (or single tenant invoice match)
-   * 3. UTR_MATCH (85%): Customer match with active PTP commitment or UTR reference
-   * 4. DATE_WINDOW_MATCH (80%): Customer match with FIFO allocation across oldest overdue invoices
-   * 5. Partial / manual (<80%): Manual matching required
+   * 3. SMART_TDS_MATCH (95%): Match after factoring statutory TDS withholdings (0.1% 194Q, 1%/2%/10% 194C/J)
+   * 4. UTR_MATCH (85%): Customer match with active PTP commitment or UTR reference
+   * 5. DATE_WINDOW_MATCH (80%): Customer match with FIFO allocation across oldest overdue invoices
+   * 6. Partial / manual (<80%): Manual matching required
    */
   async evaluatePaymentMatch(
     tenantId: string,
@@ -118,6 +123,49 @@ export const reconciliationService = {
             },
           ],
         };
+      }
+    }
+
+    // 3. Phase 19: Check for SMART_TDS_MATCH (95% confidence)
+    // Common statutory TDS rates in India: 0.1% (194Q), 1% (194C), 2% (194C/J), 10% (194J)
+    const tdsTolerances = [
+      { rate: 0.001, section: '194Q' as const, label: '0.1% TDS on Goods' },
+      { rate: 0.01, section: '194C' as const, label: '1% Contractor TDS' },
+      { rate: 0.02, section: '194C' as const, label: '2% Contractor/Tech TDS' },
+      { rate: 0.10, section: '194J' as const, label: '10% Professional TDS' },
+    ];
+
+    const tdsCandidates = payment.customerId
+      ? openInvoices.filter((inv) => inv.customerId === payment.customerId)
+      : openInvoices;
+
+    for (const inv of tdsCandidates) {
+      for (const { rate, section } of tdsTolerances) {
+        const expectedNet = inv.balance * (1 - rate);
+        if (Math.abs(expectedNet - payment.unmatchedBalance) <= 1.00) {
+          const tdsAmount = Math.round(inv.balance * rate * 100) / 100;
+          return {
+            confidenceScore: 95,
+            matchRule: 'SMART_TDS_MATCH',
+            customerId: inv.customerId,
+            customerName: inv.customerName,
+            tdsDetected: true,
+            tdsPercentage: rate * 100,
+            tdsAmount,
+            tdsSection: section,
+            suggestedAllocations: [
+              {
+                invoiceId: inv.invoiceId,
+                invoiceNumber: inv.invoiceNumber,
+                allocatedAmount: payment.unmatchedBalance,
+                invoiceBalanceBefore: inv.balance,
+                invoiceBalanceAfter: 0,
+                tdsDeducted: tdsAmount,
+                tdsSection: section,
+              },
+            ],
+          };
+        }
       }
     }
 
@@ -238,6 +286,10 @@ export const reconciliationService = {
       approvedAt: isAutoApproved ? now : null,
       tallyWriteBackStatus: isAutoApproved ? 'QUEUED' : 'NOT_REQUIRED',
       tallyVoucherNumber: null,
+      tdsDetected: match.tdsDetected,
+      tdsPercentage: match.tdsPercentage,
+      tdsAmount: match.tdsAmount,
+      tdsSection: match.tdsSection,
       createdAt: now,
       updatedAt: now,
     };
@@ -277,11 +329,13 @@ export const reconciliationService = {
 
   /**
    * Approves a reconciliation pending accountant sign-off (80% - 94% queue).
+   * Supports optional settleWithTdsPending to settle bills where TDS was deducted.
    */
   async approveReconciliation(
     tenantId: string,
     reconciliationId: string,
-    approvedByUserId: string
+    approvedByUserId: string,
+    options?: { settleWithTdsPending?: boolean }
   ): Promise<Reconciliation> {
     const rec = await dbService.get<Reconciliation>(`reconciliations/${tenantId}/${reconciliationId}`);
     if (!rec) {
@@ -289,10 +343,24 @@ export const reconciliationService = {
     }
 
     const now = Date.now();
+    const isTdsSettled = options?.settleWithTdsPending || rec.tdsDetected || false;
 
     // Commit allocations to invoices
     for (const alloc of rec.allocations) {
-      await receivablesService.recordPaymentOnInvoice(tenantId, alloc.invoiceId, alloc.allocatedAmount);
+      if (isTdsSettled) {
+        // If TDS settled, mark bill as fully paid
+        const inv = await dbService.get<Invoice>(`invoices/${tenantId}/${alloc.invoiceId}`);
+        if (inv) {
+          await dbService.update(`invoices/${tenantId}/${alloc.invoiceId}`, {
+            paidAmount: inv.amount,
+            balance: 0,
+            status: 'PAID',
+            updatedAt: now,
+          });
+        }
+      } else {
+        await receivablesService.recordPaymentOnInvoice(tenantId, alloc.invoiceId, alloc.allocatedAmount);
+      }
     }
 
     // Update payment record
@@ -307,6 +375,7 @@ export const reconciliationService = {
       approvedBy: approvedByUserId,
       approvedAt: now,
       tallyWriteBackStatus: 'QUEUED',
+      settledWithTdsPending: isTdsSettled,
       updatedAt: now,
     };
     await dbService.update(`reconciliations/${tenantId}/${reconciliationId}`, updates);
@@ -320,6 +389,19 @@ export const reconciliationService = {
     await receivablesService.recalculateTenantReceivables(tenantId);
 
     return updatedRec;
+  },
+
+  /**
+   * Phase 19: 1-Click Settle with TDS Certificate Pending
+   */
+  async settleWithTdsCertificatePending(
+    tenantId: string,
+    reconciliationId: string,
+    approvedByUserId: string
+  ): Promise<Reconciliation> {
+    return await this.approveReconciliation(tenantId, reconciliationId, approvedByUserId, {
+      settleWithTdsPending: true,
+    });
   },
 
   /**
@@ -480,7 +562,8 @@ export const reconciliationService = {
 
     const billsAllocated = reconciliation.allocations.map((a) => ({
       billNumber: a.invoiceNumber,
-      billAmount: a.allocatedAmount,
+      billAmount: a.allocatedAmount + (a.tdsDeducted || 0),
+      billType: 'Agst Ref' as const,
     }));
 
     const command: TallyVoucherCommand = {
@@ -493,9 +576,10 @@ export const reconciliationService = {
       partyLedger: reconciliation.customerName || 'Sundry Debtors',
       bankOrCashLedger: 'HDFC Bank - Collections',
       amount: reconciliation.totalAllocated,
-      narration: `CollectFlow Auto-Reconciled: ${reconciliation.matchRule} [Rec: ${reconciliation.reconciliationId}]`,
+      narration: `CollectFlow Bill-by-Bill Auto-Reconciled: ${reconciliation.matchRule} [Rec: ${reconciliation.reconciliationId}]`,
       billsAllocated,
       status: 'QUEUED',
+      autoNumbering: true,
       attemptCount: 0,
       lastAttemptAt: null,
       errorMessage: null,

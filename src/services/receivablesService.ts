@@ -1,5 +1,14 @@
 import { dbService } from './dbService';
-import { Invoice, Customer, DashboardMetrics, AgingBucket, InvoiceStatus } from '../types';
+import {
+  Invoice,
+  Customer,
+  DashboardMetrics,
+  AgingBucket,
+  InvoiceStatus,
+  CreditNote,
+  DisputeCategory,
+  MsmeCategory,
+} from '../types';
 
 export function calculateAging(
   dueDateStr: string,
@@ -83,9 +92,39 @@ export function generateUpiPaymentLink(params: {
   return { upiIntent, upiQrUrl };
 }
 
+/**
+ * Phase 19: Section 43B(h) MSMED Act Statutory Calculator
+ * 45-day deadline if written agreement exists; 15-day deadline if no agreement.
+ */
+export function calculateSection43Bh(
+  invoiceDateStr: string,
+  msmeCategory: MsmeCategory = 'MICRO',
+  hasWrittenAgreement: boolean = true,
+  referenceDate: Date = new Date()
+): { deadlineStr: string; daysRemaining: number; isOverdue: boolean } {
+  const allowedDays = hasWrittenAgreement ? 45 : 15;
+  const [year, month, day] = invoiceDateStr.split('-').map(Number);
+  const invDate = new Date(Date.UTC(year, month - 1, day));
+  const deadline = new Date(invDate.getTime() + allowedDays * 24 * 60 * 60 * 1000);
+
+  const deadlineStr = deadline.toISOString().split('T')[0];
+  const ref = new Date(Date.UTC(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate()));
+
+  const diffMs = deadline.getTime() - ref.getTime();
+  const daysRemaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const isOverdue = daysRemaining < 0 && msmeCategory !== 'NON_MSME';
+
+  return {
+    deadlineStr,
+    daysRemaining,
+    isOverdue,
+  };
+}
+
 export const receivablesService = {
   calculateAging,
   generateUpiPaymentLink,
+  calculateSection43Bh,
 
   async createInvoice(
     tenantId: string,
@@ -98,6 +137,9 @@ export const receivablesService = {
       amount: number;
       upiVpa?: string;
       payeeName?: string;
+      msmeCategory?: MsmeCategory;
+      tallyBillType?: 'Agst Ref' | 'New Ref' | 'Adv Ref' | 'On Account';
+      tallyBillName?: string;
     }
   ): Promise<Invoice> {
     const now = Date.now();
@@ -118,6 +160,9 @@ export const receivablesService = {
       paymentLink = upi.upiQrUrl;
     }
 
+    const msmeCat = data.msmeCategory || 'MICRO';
+    const compliance43B = calculateSection43Bh(data.invoiceDate, msmeCat, true);
+
     const invoice: Invoice = {
       invoiceId,
       tenantId,
@@ -130,6 +175,8 @@ export const receivablesService = {
       amount: data.amount,
       paidAmount: 0,
       balance: data.amount,
+      creditNotesAmount: 0,
+      netPayableAmount: data.amount,
       currency: 'INR',
       status,
       agingBucket,
@@ -139,11 +186,18 @@ export const receivablesService = {
       upiIntentString,
       lastReminderSentAt: null,
       reminderCount: 0,
+      msmeCategory: msmeCat,
+      section43BhDeadline: compliance43B.deadlineStr,
+      daysTo43BhDeadline: compliance43B.daysRemaining,
+      is43BhOverdue: compliance43B.isOverdue,
+      tallyBillType: data.tallyBillType || 'Agst Ref',
+      tallyBillName: data.tallyBillName || data.invoiceNumber,
       createdAt: now,
       updatedAt: now,
     };
 
     await dbService.set(`invoices/${tenantId}/${invoiceId}`, invoice);
+    await dbService.indexActiveInvoice(tenantId, invoiceId, invoice);
     await this.recalculateTenantReceivables(tenantId);
     return invoice;
   },
@@ -157,21 +211,174 @@ export const receivablesService = {
     if (!invoice) return null;
 
     const newPaidAmount = invoice.paidAmount + paymentAmount;
-    const newBalance = Math.max(0, invoice.amount - newPaidAmount);
+    const netTotal = invoice.amount - (invoice.creditNotesAmount || 0);
+    const newBalance = Math.max(0, netTotal - newPaidAmount);
     const { daysPastDue, agingBucket, status } = calculateAging(invoice.dueDate, newBalance, newPaidAmount);
 
     const updates: Partial<Invoice> = {
       paidAmount: newPaidAmount,
       balance: newBalance,
+      netPayableAmount: newBalance,
       daysPastDue,
       agingBucket,
-      status,
+      status: invoice.status === 'DISPUTED' ? 'DISPUTED' : status,
       updatedAt: Date.now(),
     };
 
     await dbService.update(`invoices/${tenantId}/${invoiceId}`, updates);
+    const updatedInvoice = { ...invoice, ...updates };
+    await dbService.indexActiveInvoice(tenantId, invoiceId, updatedInvoice);
     await this.recalculateTenantReceivables(tenantId);
-    return { ...invoice, ...updates };
+    return updatedInvoice;
+  },
+
+  /**
+   * Phase 19: Ingest or create a Credit Note / Return adjustment
+   * Automatically deducts from open balance to prevent false overdue reminders
+   */
+  async createCreditNote(
+    tenantId: string,
+    params: {
+      customerId: string;
+      customerName: string;
+      invoiceId?: string;
+      invoiceNumber?: string;
+      noteNumber: string;
+      noteDate: string;
+      amount: number;
+      reason: string;
+    }
+  ): Promise<CreditNote> {
+    const now = Date.now();
+    const creditNoteId = `cn_${Math.random().toString(36).substring(2, 9)}_${now.toString(36)}`;
+
+    const note: CreditNote = {
+      creditNoteId,
+      tenantId,
+      customerId: params.customerId,
+      customerName: params.customerName,
+      invoiceId: params.invoiceId || null,
+      invoiceNumber: params.invoiceNumber || null,
+      noteNumber: params.noteNumber,
+      noteDate: params.noteDate,
+      amount: params.amount,
+      reason: params.reason,
+      status: params.invoiceId ? 'APPLIED' : 'PENDING',
+      createdAt: now,
+    };
+
+    await dbService.set(`creditNotes/${tenantId}/${creditNoteId}`, note);
+
+    // If linked to an invoice, immediately apply and adjust balance
+    if (params.invoiceId) {
+      await this.applyCreditNote(tenantId, creditNoteId, params.invoiceId);
+    }
+
+    return note;
+  },
+
+  async getCreditNotes(tenantId: string, invoiceId?: string): Promise<CreditNote[]> {
+    const map = await dbService.get<Record<string, CreditNote>>(`creditNotes/${tenantId}`);
+    if (!map) return [];
+    const list = Object.values(map);
+    if (invoiceId) {
+      return list.filter((n) => n.invoiceId === invoiceId);
+    }
+    return list;
+  },
+
+  async applyCreditNote(tenantId: string, creditNoteId: string, invoiceId: string): Promise<Invoice | null> {
+    const [note, invoice] = await Promise.all([
+      dbService.get<CreditNote>(`creditNotes/${tenantId}/${creditNoteId}`),
+      dbService.get<Invoice>(`invoices/${tenantId}/${invoiceId}`),
+    ]);
+
+    if (!note || !invoice) return null;
+
+    const newCreditAmount = (invoice.creditNotesAmount || 0) + note.amount;
+    const netTotal = invoice.amount - newCreditAmount;
+    const newBalance = Math.max(0, netTotal - invoice.paidAmount);
+    const { daysPastDue, agingBucket, status } = calculateAging(invoice.dueDate, newBalance, invoice.paidAmount);
+
+    const updates: Partial<Invoice> = {
+      creditNotesAmount: newCreditAmount,
+      netPayableAmount: netTotal,
+      balance: newBalance,
+      daysPastDue,
+      agingBucket,
+      status: newBalance === 0 ? 'PAID' : (invoice.status === 'DISPUTED' ? 'DISPUTED' : status),
+      updatedAt: Date.now(),
+    };
+
+    await dbService.update(`invoices/${tenantId}/${invoiceId}`, updates);
+    await dbService.update(`creditNotes/${tenantId}/${creditNoteId}`, {
+      status: 'APPLIED',
+      invoiceId,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+
+    const updated = { ...invoice, ...updates };
+    await dbService.indexActiveInvoice(tenantId, invoiceId, updated);
+    await this.recalculateTenantReceivables(tenantId);
+    return updated;
+  },
+
+  /**
+   * Phase 19: Dispute Management Workflow
+   * Freezes automated reminders and assigns follow-up
+   */
+  async markInvoiceDisputed(
+    tenantId: string,
+    invoiceId: string,
+    reason: DisputeCategory,
+    notes?: string,
+    assignedTo?: string
+  ): Promise<Invoice | null> {
+    const invoice = await dbService.get<Invoice>(`invoices/${tenantId}/${invoiceId}`);
+    if (!invoice) return null;
+
+    const updates: Partial<Invoice> = {
+      status: 'DISPUTED',
+      disputeReason: reason,
+      disputedAt: Date.now(),
+      disputeNotes: notes || 'Invoice flagged as disputed by collection team.',
+      disputeAssignedTo: assignedTo || 'Internal Sales Representative',
+      updatedAt: Date.now(),
+    };
+
+    await dbService.update(`invoices/${tenantId}/${invoiceId}`, updates);
+    const updated = { ...invoice, ...updates };
+    await dbService.indexActiveInvoice(tenantId, invoiceId, updated);
+    await this.recalculateTenantReceivables(tenantId);
+    return updated;
+  },
+
+  async resolveDispute(
+    tenantId: string,
+    invoiceId: string,
+    resolutionNotes?: string
+  ): Promise<Invoice | null> {
+    const invoice = await dbService.get<Invoice>(`invoices/${tenantId}/${invoiceId}`);
+    if (!invoice) return null;
+
+    const { daysPastDue, agingBucket, status } = calculateAging(
+      invoice.dueDate,
+      invoice.balance,
+      invoice.paidAmount
+    );
+
+    const updates: Partial<Invoice> = {
+      status,
+      disputeReason: null,
+      disputeNotes: resolutionNotes ? `Dispute resolved: ${resolutionNotes}` : null,
+      updatedAt: Date.now(),
+    };
+
+    await dbService.update(`invoices/${tenantId}/${invoiceId}`, updates);
+    const updated = { ...invoice, ...updates };
+    await dbService.indexActiveInvoice(tenantId, invoiceId, updated);
+    await this.recalculateTenantReceivables(tenantId);
+    return updated;
   },
 
   async recalculateTenantReceivables(tenantId: string): Promise<DashboardMetrics> {
@@ -218,7 +425,7 @@ export const receivablesService = {
       openInvoicesCount += 1;
 
       // Calculate aging dynamically
-      const { daysPastDue, agingBucket, status } = calculateAging(inv.dueDate, inv.balance, inv.paidAmount, today);
+      const { daysPastDue, agingBucket } = calculateAging(inv.dueDate, inv.balance, inv.paidAmount, today);
 
       // Bucket totals
       if (agingBucket === 'CURRENT') agingBuckets.current += inv.balance;
@@ -295,8 +502,6 @@ export const receivablesService = {
         };
       });
 
-    // Approximate Days Sales Outstanding (DSO) = (Total Receivables / Annual Revenue) * 365
-    // Here calculated from active receivables delay
     const totalOverdueDelay = Object.values(customerAggregates).reduce((sum, a) => sum + a.delaySum, 0);
     const dso = overdueInvoicesCount > 0 ? Math.round(30 + totalOverdueDelay / overdueInvoicesCount) : 30;
 
@@ -317,6 +522,15 @@ export const receivablesService = {
     };
 
     await dbService.set(`dashboard/${tenantId}`, metrics);
+    await dbService.updateDashboardSummary(tenantId, {
+      totalReceivables,
+      overdueAmount,
+      dueTodayAmount,
+      openInvoicesCount,
+      overdueInvoicesCount,
+      dso,
+    });
+
     return metrics;
   },
 };

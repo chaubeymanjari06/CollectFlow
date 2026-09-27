@@ -123,7 +123,26 @@ export interface Customer {
 }
 
 export type AgingBucket = 'CURRENT' | '1-30' | '31-60' | '61-90' | '90+';
-export type InvoiceStatus = 'OPEN' | 'DUE_SOON' | 'DUE_TODAY' | 'OVERDUE' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
+export type InvoiceStatus = 'OPEN' | 'DUE_SOON' | 'DUE_TODAY' | 'OVERDUE' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' | 'DISPUTED';
+
+export type DisputeCategory = 'RATE_MISMATCH' | 'DAMAGED_GOODS' | 'MISSING_LR' | 'DELIVERY_PENDING' | 'OTHER';
+
+export type MsmeCategory = 'MICRO' | 'SMALL' | 'MEDIUM' | 'NON_MSME';
+
+export interface CreditNote {
+  creditNoteId: string;
+  tenantId: string;
+  customerId: string;
+  customerName: string;
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  noteNumber: string;
+  noteDate: string;
+  amount: number;
+  reason: string;
+  status: 'APPLIED' | 'PENDING';
+  createdAt: number;
+}
 
 export interface Invoice {
   invoiceId: string;
@@ -139,6 +158,8 @@ export interface Invoice {
   amount: number;
   paidAmount: number;
   balance: number;
+  creditNotesAmount?: number;
+  netPayableAmount?: number;
   currency: string;
   status: InvoiceStatus;
   agingBucket: AgingBucket;
@@ -149,6 +170,16 @@ export interface Invoice {
   upiIntentString?: string | null;
   lastReminderSentAt?: number | null;
   reminderCount: number;
+  disputeReason?: DisputeCategory | null;
+  disputedAt?: number | null;
+  disputeAssignedTo?: string | null;
+  disputeNotes?: string | null;
+  msmeCategory?: MsmeCategory;
+  section43BhDeadline?: string;
+  daysTo43BhDeadline?: number;
+  is43BhOverdue?: boolean;
+  tallyBillType?: 'Agst Ref' | 'New Ref' | 'Adv Ref' | 'On Account';
+  tallyBillName?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -268,6 +299,7 @@ export interface Payment {
 export type MatchRule =
   | 'EXACT_INVOICE_REF'
   | 'EXACT_AMOUNT_MATCH'
+  | 'SMART_TDS_MATCH'
   | 'UTR_MATCH'
   | 'DATE_WINDOW_MATCH'
   | 'FUZZY_NARRATION'
@@ -282,6 +314,8 @@ export interface PaymentAllocation {
   allocatedAmount: number;
   invoiceBalanceBefore: number;
   invoiceBalanceAfter: number;
+  tdsDeducted?: number;
+  tdsSection?: '194Q' | '194C' | '194J' | 'OTHER';
 }
 
 export interface Reconciliation {
@@ -300,14 +334,22 @@ export interface Reconciliation {
   approvedAt?: number | null;
   tallyWriteBackStatus: TallyWriteBackState;
   tallyVoucherNumber?: string | null;
+  tdsDetected?: boolean;
+  tdsPercentage?: number;
+  tdsAmount?: number;
+  tdsSection?: '194Q' | '194C' | '194J';
+  settledWithTdsPending?: boolean;
   notes?: string | null;
   createdAt: number;
   updatedAt: number;
 }
 
 export interface TallyBillAllocation {
-  billNumber: string;
-  billAmount: number;
+  billNumber?: string;
+  billName?: string;
+  billAmount?: number;
+  amount?: number;
+  billType?: 'Agst Ref' | 'New Ref' | 'Adv Ref' | 'On Account';
 }
 
 export type TallyCommandStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -316,23 +358,65 @@ export interface TallyVoucherCommand {
   commandId: string;
   tenantId: string;
   deviceId?: string | null;
-  reconciliationId: string;
+  reconciliationId?: string;
   voucherType: 'Receipt';
   voucherDate: string; // 'YYYYMMDD' or 'YYYY-MM-DD'
   partyLedger: string;
   bankOrCashLedger: string;
   amount: number;
   narration: string;
-  billsAllocated: TallyBillAllocation[];
+  billsAllocated?: TallyBillAllocation[];
+  billAllocations?: TallyBillAllocation[];
+  billType?: string;
   status: TallyCommandStatus;
-  attemptCount: number;
-  lastAttemptAt?: number | null;
-  errorMessage?: string | null;
+  autoNumbering?: boolean;
+  tallyGuid?: string | null;
   tallyMasterId?: string | null;
   tallyVoucherNumber?: string | null;
+  attemptCount?: number;
+  lastAttemptAt?: number | null;
+  errorMessage?: string | null;
   createdAt: number;
-  updatedAt: number;
+  updatedAt?: number;
+  executedAt?: number | null;
 }
+
+export interface DetectedTallyInstance {
+  port: number;
+  companyName: string;
+  financialYear: string;
+  edition: string;
+  active: boolean;
+}
+
+export interface TallyPairingSession {
+  sessionId: string;
+  tenantId: string;
+  pairingPin: string;
+  qrPayload: string;
+  status: 'WAITING' | 'PAIRED' | 'EXPIRED';
+  expiresAt: number;
+  detectedInstances: DetectedTallyInstance[];
+}
+
+export interface MorningRoutineState {
+  tenantId: string;
+  date: string;
+  pulseChecked: boolean;
+  remindersDispatched: boolean;
+  paymentsMatched: boolean;
+  brokenPromisesReviewed: boolean;
+  summary: {
+    urgentBrokenPtpCount: number;
+    urgentBrokenPtpAmount: number;
+    todayDueCount: number;
+    todayDueAmount: number;
+    unmatchedPaymentsCount: number;
+    unmatchedPaymentsAmount: number;
+  };
+}
+
+export type AppLanguage = 'en' | 'hi' | 'gu';
 
 export type CustomerRiskTier = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 

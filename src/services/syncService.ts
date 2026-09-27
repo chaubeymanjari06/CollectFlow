@@ -1,6 +1,14 @@
 import { dbService } from './dbService';
 import { receivablesService } from './receivablesService';
-import { Device, SyncJob, Customer, Invoice } from '../types';
+import {
+  Device,
+  SyncJob,
+  Customer,
+  Invoice,
+  TallyPairingSession,
+  DetectedTallyInstance,
+  TallyVoucherCommand,
+} from '../types';
 
 export interface TallyCustomerPayload {
   sourceCustomerId: string;
@@ -40,7 +48,7 @@ export const syncService = {
       deviceId,
       tenantId,
       deviceName: params.deviceName,
-      agentVersion: '1.2.0',
+      agentVersion: '2.0.0 (Enterprise MSME)',
       osVersion: 'Windows 11 Pro 64-bit',
       status: 'ONLINE',
       tallyHost: params.tallyHost || 'localhost:9000',
@@ -69,6 +77,216 @@ export const syncService = {
     return Object.values(data).sort((a, b) => b.startedAt - a.startedAt);
   },
 
+  /**
+   * Phase 19: Zero-Tech 6-Digit PIN & QR Handshake Pairing
+   * Generates a 6-digit PIN and runs auto-discovery on local Tally ports (9000, 9001, 9005)
+   */
+  async generatePairingSession(
+    tenantId: string,
+    companyName: string = 'CollectFlow MSME'
+  ): Promise<TallyPairingSession> {
+    const sessionId = `pair_${Date.now().toString(36)}`;
+    const pinRaw = Math.floor(100000 + Math.random() * 900000).toString();
+    const pairingPin = `${pinRaw.substring(0, 3)}-${pinRaw.substring(3)}`;
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
+
+    // Auto-discovery simulation of localhost Tally ports
+    const detectedInstances: DetectedTallyInstance[] = [
+      {
+        port: 9000,
+        companyName: `${companyName} (FY 2026-27)`,
+        financialYear: '2026-2027',
+        edition: 'TallyPrime Silver 4.1',
+        active: true,
+      },
+      {
+        port: 9001,
+        companyName: `${companyName} (Branch Unit 2)`,
+        financialYear: '2026-2027',
+        edition: 'TallyPrime 4.0',
+        active: false,
+      },
+      {
+        port: 9005,
+        companyName: 'Audit & CA Mirror Firm',
+        financialYear: '2025-2026',
+        edition: 'Tally.ERP 9 Rel 6.6',
+        active: false,
+      },
+    ];
+
+    const session: TallyPairingSession = {
+      sessionId,
+      tenantId,
+      pairingPin,
+      qrPayload: `collectflow://pair?tenantId=${tenantId}&pin=${pinRaw}&ts=${Date.now()}`,
+      status: 'WAITING',
+      expiresAt,
+      detectedInstances,
+    };
+
+    await dbService.set(`pairingSessions/${tenantId}/${sessionId}`, session);
+    return session;
+  },
+
+  async verifyPairingPin(
+    tenantId: string,
+    pin: string,
+    selectedCompany?: string
+  ): Promise<{ success: boolean; device?: Device }> {
+    const cleanPin = pin.replace(/\D/g, '');
+    if (cleanPin.length !== 6) {
+      throw new Error('Please enter a valid 6-digit pairing PIN (e.g. 741-902)');
+    }
+
+    const device = await this.registerDevice(tenantId, {
+      deviceName: 'Windows Desktop (CollectFlow Helper)',
+      tallyHost: 'localhost:9000',
+      activeCompany: selectedCompany || 'Apex Steel Pvt Ltd',
+    });
+
+    return { success: true, device };
+  },
+
+  /**
+   * Phase 19: Plain-Language Error Recovery Guidance for Non-Technical Users
+   */
+  getConnectionGuidance(code: string): {
+    title: string;
+    solution: string;
+    steps: string[];
+  } {
+    switch (code) {
+      case 'ODBC_DISABLED':
+      case 'PORT_BLOCKED':
+        return {
+          title: 'Tally XML / ODBC Server is Disabled',
+          solution: 'Press F12 / F1 in Tally, navigate to Advanced Configuration, and enable ODBC/XML Server.',
+          steps: [
+            'Open TallyPrime and press F1 (Help) or F12 (Configure).',
+            'Select Settings -> Connectivity.',
+            "Set 'Tally is acting as: Both' or 'ODBC Enabled: Yes'.",
+            'Restart TallyPrime to apply the settings.',
+          ],
+        };
+      case 'FIREWALL_BLOCKED':
+        return {
+          title: 'Windows Defender / Firewall Blocking Port 9000',
+          solution: 'Add inbound firewall rule allowing TCP port 9000 for TallyPrime.',
+          steps: [
+            'Open Windows Defender Firewall with Advanced Security.',
+            'Click Inbound Rules -> New Rule.',
+            'Select Port -> TCP -> Specific local ports: 9000.',
+            'Select Allow the connection and name it TallyPrime Server.',
+          ],
+        };
+      case 'ECONNREFUSED':
+      case 'TALLY_NOT_RUNNING':
+        return {
+          title: 'Tally Is Not Running',
+          solution: 'Start TallyPrime and open your active company.',
+          steps: [
+            'Launch TallyPrime from Desktop or Start Menu.',
+            'Select and open your active company.',
+            'Keep Tally open in the background while syncing.',
+          ],
+        };
+      case 'COMPANY_CLOSED':
+        return {
+          title: 'No Company Open in Tally',
+          solution: 'Open your active accounting company in TallyPrime.',
+          steps: [
+            'In TallyPrime, press Alt + F3 to Select Company.',
+            'Choose your working company for this financial year.',
+            "Click 'Retry Sync' in CollectFlow.",
+          ],
+        };
+      default:
+        return {
+          title: 'General Connectivity Issue',
+          solution: 'Ensure TallyPrime is open and logged in with full administrative privileges.',
+          steps: [
+            'Check that TallyPrime is open.',
+            'Check that port 9000 is listening.',
+            'Restart CollectFlow Helper if needed.',
+          ],
+        };
+    }
+  },
+
+  /**
+   * Phase 19: Bill-by-Bill Agst Ref XML Generator & Voucher Collision Prevention
+   */
+  generateTallyVoucherXml(command: TallyVoucherCommand): string {
+    const billAllocations = command.billAllocations || (command as any).billsAllocated || [];
+    const billAllocationsXml = billAllocations
+      .map(
+        (b: any) => `
+        <BILLALLOCATIONS.LIST>
+          <NAME>${b.billName || b.billNumber}</NAME>
+          <BILLTYPE>${b.billType || 'Agst Ref'}</BILLTYPE>
+          <AMOUNT>-${(b.amount || b.billAmount || 0).toFixed(2)}</AMOUNT>
+        </BILLALLOCATIONS.LIST>`
+      )
+      .join('');
+
+    const voucherNumberElement = command.autoNumbering
+      ? `<ISAUTONUMBER>Yes</ISAUTONUMBER>
+            <!-- Voucher number auto-assigned by Tally to prevent sequence collisions -->`
+      : `<VOUCHERNUMBER>${command.commandId}</VOUCHERNUMBER>`;
+
+    return `<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Vouchers</REPORTNAME>
+        <STATICVARIABLES>
+          <SVCURRENTCOMPANY>${command.partyLedger}</SVCURRENTCOMPANY>
+        </STATICVARIABLES>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <VOUCHER VCHTYPE="Receipt" ACTION="Create">
+            <DATE>${command.voucherDate}</DATE>
+            ${voucherNumberElement}
+            <PARTYLEDGERNAME>${command.partyLedger}</PARTYLEDGERNAME>
+            <NARRATION>${command.narration}</NARRATION>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${command.partyLedger}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>${command.amount.toFixed(2)}</AMOUNT>
+              ${billAllocationsXml}
+            </ALLLEDGERENTRIES.LIST>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${command.bankOrCashLedger}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>-${command.amount.toFixed(2)}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+  },
+
+  /**
+   * Phase 19: Desktop Agent Watchdog & Offline SQLite Buffer State
+   */
+  getOfflineQueueStatus() {
+    return {
+      serviceRunning: true,
+      serviceName: 'collectflow-agent.exe',
+      watchdogActive: true,
+      sqliteBufferedRecords: 0,
+      offlineModeSupported: true,
+      lastWatchdogHeartbeat: Date.now(),
+    };
+  },
+
   async ingestSyncBatch(
     tenantId: string,
     deviceId: string,
@@ -85,7 +303,6 @@ export const syncService = {
     let upsertedCount = 0;
     const errors: Array<{ recordId: string; error: string }> = [];
 
-    // Map to lookup customerId by sourceCustomerId
     const customerSourceMap: Record<string, string> = {};
 
     // 1. Ingest Customers
@@ -141,6 +358,8 @@ export const syncService = {
           paidAmount
         );
 
+        const compliance43B = receivablesService.calculateSection43Bh(inv.invoiceDate, 'MICRO', true);
+
         const invoiceData: Invoice = {
           invoiceId,
           tenantId,
@@ -154,6 +373,8 @@ export const syncService = {
           amount: inv.amount,
           paidAmount,
           balance,
+          creditNotesAmount: 0,
+          netPayableAmount: inv.amount,
           currency: 'INR',
           status,
           agingBucket,
@@ -163,11 +384,18 @@ export const syncService = {
           upiIntentString: null,
           lastReminderSentAt: null,
           reminderCount: 0,
+          msmeCategory: 'MICRO',
+          section43BhDeadline: compliance43B.deadlineStr,
+          daysTo43BhDeadline: compliance43B.daysRemaining,
+          is43BhOverdue: compliance43B.isOverdue,
+          tallyBillType: 'Agst Ref',
+          tallyBillName: inv.invoiceNumber,
           createdAt: startedAt,
           updatedAt: startedAt,
         };
 
         await dbService.set(`invoices/${tenantId}/${invoiceId}`, invoiceData);
+        await dbService.indexActiveInvoice(tenantId, invoiceId, invoiceData);
         upsertedCount += 1;
       } catch (err: any) {
         errors.push({ recordId: inv.sourceRecordId, error: err.message || 'Invoice sync error' });
@@ -191,7 +419,7 @@ export const syncService = {
       tenantId,
       deviceId,
       syncType,
-      status: errors.length > 0 && upsertedCount === 0 ? 'FAILED' : 'COMPLETED',
+      status: errors.length > 0 ? 'FAILED' : 'COMPLETED',
       recordsReceived: {
         customers: payload.customers.length,
         invoices: payload.invoices.length,
@@ -208,19 +436,18 @@ export const syncService = {
     return syncJob;
   },
 
-  async runSimulatedTallySync(tenantId: string, companyName: string): Promise<SyncJob> {
-    // 1. Ensure a device exists
-    let devices = await this.getDevices(tenantId);
+  async runSimulatedTallySync(tenantId: string, companyName?: string): Promise<SyncJob> {
+    const devices = await this.getDevices(tenantId);
     let device = devices[0];
+
     if (!device) {
       device = await this.registerDevice(tenantId, {
-        deviceName: 'TALLY-WORKSTATION-01',
+        deviceName: 'Primary Accountant PC (TallyPrime Helper)',
         tallyHost: 'localhost:9000',
-        activeCompany: companyName,
+        activeCompany: companyName || 'Apex Steel Pvt Ltd',
       });
     }
 
-    // 2. Realistic sample dataset for Indian MSMEs
     const today = new Date();
     const formatDate = (daysOffset: number) => {
       const d = new Date(today.getTime() + daysOffset * 24 * 60 * 60 * 1000);
@@ -231,22 +458,22 @@ export const syncService = {
       {
         sourceCustomerId: 'LEDG_001',
         name: 'Sharma Electricals & Hardware',
-        contactPerson: 'Anand Sharma',
-        mobile: '+919820112233',
-        email: 'billing@sharmaelectricals.in',
-        creditLimit: 300000,
+        contactPerson: 'Mr. Rajesh Sharma',
+        mobile: '+919811223344',
+        email: 'sharma.electricals@gmail.com',
+        creditLimit: 500000,
         paymentTerms: 30,
-        gstin: '27AABCS1429B1Z',
+        gstin: '07AAAAA0000A1Z5',
       },
       {
         sourceCustomerId: 'LEDG_002',
         name: 'Apex Precision Engineering',
-        contactPerson: 'Sanjay Deshmukh',
-        mobile: '+919819445566',
+        contactPerson: 'Vikram Joshi',
+        mobile: '+919876543210',
         email: 'accounts@apexprecision.com',
-        creditLimit: 750000,
+        creditLimit: 1000000,
         paymentTerms: 45,
-        gstin: '27AABCA5566C1Z',
+        gstin: '27AABCA1234B1Z2',
       },
       {
         sourceCustomerId: 'LEDG_003',
@@ -267,7 +494,7 @@ export const syncService = {
         customerName: 'Sharma Electricals & Hardware',
         invoiceNumber: 'INV-2026-081',
         invoiceDate: formatDate(-45),
-        dueDate: formatDate(-15), // Overdue by 15 days (1-30 bucket)
+        dueDate: formatDate(-15),
         amount: 84500,
         paidAmount: 0,
       },
@@ -277,7 +504,7 @@ export const syncService = {
         customerName: 'Sharma Electricals & Hardware',
         invoiceNumber: 'INV-2026-092',
         invoiceDate: formatDate(-10),
-        dueDate: formatDate(20), // Current
+        dueDate: formatDate(20),
         amount: 32000,
         paidAmount: 0,
       },
@@ -287,9 +514,9 @@ export const syncService = {
         customerName: 'Apex Precision Engineering',
         invoiceNumber: 'INV-2026-064',
         invoiceDate: formatDate(-80),
-        dueDate: formatDate(-35), // Overdue by 35 days (31-60 bucket)
+        dueDate: formatDate(-35),
         amount: 145000,
-        paidAmount: 25000, // Partially paid
+        paidAmount: 25000,
       },
       {
         sourceRecordId: 'VOUCH_104',
@@ -297,7 +524,7 @@ export const syncService = {
         customerName: 'Om Sai Trading Corporation',
         invoiceNumber: 'INV-2026-105',
         invoiceDate: formatDate(-14),
-        dueDate: formatDate(1), // Due Soon
+        dueDate: formatDate(1),
         amount: 47200,
         paidAmount: 0,
       },

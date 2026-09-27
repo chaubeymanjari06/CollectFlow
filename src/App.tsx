@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AppLayout } from './components/layout/AppLayout';
 
@@ -29,8 +30,9 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <TenantProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <TenantProvider>
           <Routes>
             {/* Public Auth Routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -79,6 +81,7 @@ export const App: React.FC = () => {
           </Routes>
         </TenantProvider>
       </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 };
