@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { tenantService } from '../services/tenantService';
 import { Tenant, TenantMembership, UserRole } from '../types';
 
-interface TenantContextType {
+export interface TenantContextType {
   activeTenant: Tenant | null;
   activeMembership: TenantMembership | null;
   availableTenants: Tenant[];

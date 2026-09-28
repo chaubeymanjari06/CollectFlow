@@ -1,13 +1,17 @@
 import React from 'react';
 import { LogOut, Bell, Languages } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../contexts/TenantContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CompanySwitcher } from './CompanySwitcher';
 import { AppLanguage } from '../../types';
+import { getRoleMeta } from '../../config/rbacNavigation';
 
 export const Navbar: React.FC = () => {
   const { userProfile, currentUser, logout } = useAuth();
+  const { role } = useTenant();
   const { language, setLanguage } = useLanguage();
+  const roleMeta = getRoleMeta(role);
 
   const languages: Array<{ code: AppLanguage; label: string }> = [
     { code: 'en', label: 'English' },
@@ -57,9 +61,17 @@ export const Navbar: React.FC = () => {
             {userProfile?.name?.charAt(0).toUpperCase() || currentUser?.email?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-semibold text-slate-800">
-              {userProfile?.name || 'User'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-800">
+                {userProfile?.name || 'User'}
+              </span>
+              <span
+                className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${roleMeta.badgeClass}`}
+                data-testid="navbar-role-badge"
+              >
+                {role || 'MEMBER'}
+              </span>
+            </div>
             <span className="text-[11px] text-slate-400 truncate max-w-[140px]">
               {currentUser?.email}
             </span>
