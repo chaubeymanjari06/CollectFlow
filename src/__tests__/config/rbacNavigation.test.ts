@@ -7,8 +7,8 @@ import {
 import { UserRole } from '../../types';
 
 describe('RBAC Navigation Configuration (rbacNavigation)', () => {
-  it('should have all 16 navigation tools defined in master catalog', () => {
-    expect(ALL_NAV_ITEMS.length).toBe(16);
+  it('should have all 17 navigation tools defined in master catalog', () => {
+    expect(ALL_NAV_ITEMS.length).toBe(17);
     const ids = ALL_NAV_ITEMS.map((item) => item.id);
     expect(ids).toContain('dashboard');
     expect(ids).toContain('invoices');
@@ -18,6 +18,7 @@ describe('RBAC Navigation Configuration (rbacNavigation)', () => {
     expect(ids).toContain('reminders');
     expect(ids).toContain('analytics');
     expect(ids).toContain('copilot');
+    expect(ids).toContain('promotions');
     expect(ids).toContain('integrations');
     expect(ids).toContain('partner');
     expect(ids).toContain('billing');
@@ -29,31 +30,32 @@ describe('RBAC Navigation Configuration (rbacNavigation)', () => {
   });
 
   describe('Strict Role-Based Item Permissions', () => {
-    it('OWNER should have access to all 16 navigation areas', () => {
+    it('OWNER should have access to all 17 navigation areas', () => {
       const { coreItems, diagnosticItems } = getAllowedNavItems('OWNER', true);
       const total = coreItems.length + diagnosticItems.length;
-      expect(total).toBe(16);
+      expect(total).toBe(17);
       expect(diagnosticItems.length).toBe(3);
       expect(diagnosticItems.map((d) => d.id)).toEqual(['observability', 'security', 'pilot']);
     });
 
-    it('should give ADMIN access to all 16 navigation tools (including all diagnostics)', () => {
+    it('should give ADMIN access to all 17 navigation tools (including all diagnostics)', () => {
       const { coreItems, diagnosticItems } = getAllowedNavItems('ADMIN', false);
       const total = coreItems.length + diagnosticItems.length;
-      expect(total).toBe(16);
+      expect(total).toBe(17);
       expect(diagnosticItems.length).toBe(3);
       const coreIds = coreItems.map((c) => c.id);
       expect(coreIds).toContain('billing');
       expect(coreIds).toContain('team');
       expect(coreIds).toContain('integrations');
       expect(coreIds).toContain('settings');
+      expect(coreIds).toContain('promotions');
     });
 
-    it('MANAGER (Munimji) should only access 10 core items and NO diagnostics or admin areas', () => {
+    it('MANAGER (Munimji) should only access 11 core items and NO diagnostics or admin areas', () => {
       const { coreItems, diagnosticItems } = getAllowedNavItems('MANAGER', false);
       const coreIds = coreItems.map((c) => c.id);
 
-      expect(coreItems.length).toBe(10);
+      expect(coreItems.length).toBe(11);
       expect(diagnosticItems.length).toBe(0);
 
       // Allowed
@@ -65,6 +67,7 @@ describe('RBAC Navigation Configuration (rbacNavigation)', () => {
       expect(coreIds).toContain('reminders');
       expect(coreIds).toContain('analytics');
       expect(coreIds).toContain('copilot');
+      expect(coreIds).toContain('promotions');
       expect(coreIds).toContain('integrations');
       expect(coreIds).toContain('settings');
 

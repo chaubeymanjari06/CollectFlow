@@ -1293,3 +1293,5 @@ export interface DailyPilotMeasurement {
   amountCollected: number;
   activeMerchants: number;
 }
+
+export * from './promotions';

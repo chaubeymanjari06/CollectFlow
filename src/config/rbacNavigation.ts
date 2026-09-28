@@ -15,6 +15,7 @@ import {
   Activity,
   ShieldCheck,
   Rocket,
+  Megaphone,
   LucideIcon,
 } from 'lucide-react';
 import { UserRole } from '../types';
@@ -101,6 +102,14 @@ export const ALL_NAV_ITEMS: NavItemConfig[] = [
     labelKey: 'nav_copilot',
     defaultLabel: 'AI Copilot',
     icon: Sparkles,
+    allowedRoles: ['OWNER', 'ADMIN', 'MANAGER'],
+  },
+  {
+    id: 'promotions',
+    to: '/promotions',
+    labelKey: 'nav_promotions',
+    defaultLabel: 'Promotions Hub',
+    icon: Megaphone,
     allowedRoles: ['OWNER', 'ADMIN', 'MANAGER'],
   },
   {

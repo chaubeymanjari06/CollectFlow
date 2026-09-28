@@ -20,6 +20,7 @@ import { ReconciliationPage } from './pages/reconciliation/ReconciliationPage';
 import { RemindersPage } from './pages/reminders/RemindersPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { CopilotPage } from './pages/copilot/CopilotPage';
+import { PromotionsPage } from './pages/promotions/PromotionsPage';
 import { IntegrationsPage } from './pages/integrations/IntegrationsPage';
 import { PartnerPortalPage } from './pages/partner/PartnerPortalPage';
 import { BillingPage } from './pages/billing/BillingPage';
@@ -136,6 +137,17 @@ export const App: React.FC = () => {
                       areaName="AI Copilot"
                     >
                       <CopilotPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="promotions"
+                  element={
+                    <RoleGuard
+                      allowedRoles={['OWNER', 'ADMIN', 'MANAGER']}
+                      areaName="Promotions & Growth Hub"
+                    >
+                      <PromotionsPage />
                     </RoleGuard>
                   }
                 />
