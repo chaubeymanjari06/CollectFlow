@@ -12,20 +12,20 @@ export const CompanySwitcher: React.FC = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-left"
+        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition text-left"
       >
-        <div className="w-7 h-7 rounded-md bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs">
+        <div className="w-7 h-7 rounded-md bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs shrink-0">
           {activeTenant?.name?.charAt(0).toUpperCase() || 'C'}
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-semibold text-slate-800 line-clamp-1 max-w-[140px]">
+          <span className="text-xs font-semibold text-slate-800 line-clamp-1 max-w-[85px] sm:max-w-[140px]">
             {activeTenant?.name || 'Select Company'}
           </span>
-          <span className="text-[10px] font-medium text-slate-400 capitalize">
+          <span className="text-[10px] font-medium text-slate-400 capitalize hidden sm:inline">
             {role?.toLowerCase() || 'Member'}
           </span>
         </div>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5 sm:ml-1 shrink-0" />
       </button>
 
       {isOpen && (

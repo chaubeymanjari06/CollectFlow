@@ -851,7 +851,7 @@ export const SecurityPage: React.FC = () => {
       {/* ========================================================================= */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 text-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900">Request Data Takeout</h3>
             <p className="text-slate-600">
               Download your complete company workspace, ledgers, invoice histories, and payments in open format.
@@ -907,7 +907,7 @@ export const SecurityPage: React.FC = () => {
       {/* ========================================================================= */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 text-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-2 text-rose-600 font-bold text-base">
               <AlertTriangle className="w-5 h-5" />
               <h3>Confirm Data Deletion Request</h3>

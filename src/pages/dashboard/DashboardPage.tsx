@@ -480,7 +480,7 @@ export const DashboardPage: React.FC = () => {
       {/* Safety Preview Dispatch Slider Modal */}
       {dispatchModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">

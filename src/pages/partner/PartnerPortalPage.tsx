@@ -945,7 +945,7 @@ export const PartnerPortalPage: React.FC = () => {
       {/* ========================================================================= */}
       {selectedClientHealth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900">{selectedClientHealth.clientName}</h3>
@@ -1026,7 +1026,7 @@ export const PartnerPortalPage: React.FC = () => {
       {/* ========================================================================= */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-base font-bold text-slate-900">Invite MSME Client</h3>
               <p className="text-xs text-slate-500">
@@ -1145,7 +1145,7 @@ export const PartnerPortalPage: React.FC = () => {
       {/* ========================================================================= */}
       {showTicketModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-base font-bold text-slate-900">Open Support Ticket</h3>
               <p className="text-xs text-slate-500">Contact CollectFlow support on behalf of your client</p>

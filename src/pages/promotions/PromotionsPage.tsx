@@ -1040,7 +1040,7 @@ export const PromotionsPage: React.FC = () => {
       {/* ========================================================= */}
       {showAddClientModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900">Add Promotional Contact</h3>
             <form onSubmit={handleAddClientSubmit} className="space-y-3 text-xs">
               <div>
@@ -1141,7 +1141,7 @@ export const PromotionsPage: React.FC = () => {
       {/* ========================================================= */}
       {showCsvModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900">Bulk Import Contacts via CSV / Excel</h3>
             <p className="text-xs text-slate-500">
               Paste CSV rows below or copy-paste directly from Excel. Columns expected:

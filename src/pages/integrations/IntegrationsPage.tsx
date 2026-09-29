@@ -476,7 +476,7 @@ Cummins Generator Technologies,+919880112233,cummins.pay@cummins.com,27AAACC7890
       )}
 
       {/* Primary Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab('zoho')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
@@ -1475,7 +1475,7 @@ Cummins Generator Technologies,+919880112233,cummins.pay@cummins.com,27AAACC7890
       {/* ========================================================================= */}
       {showZohoConnectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-2.5 mb-1">
               <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
                 ZB

@@ -6,12 +6,19 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
+  X,
 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getAllowedNavItems, getRoleMeta } from '../../config/rbacNavigation';
 
-export const Sidebar: React.FC = () => {
+export interface SidebarProps {
+  onNavigate?: () => void;
+  onClose?: () => void;
+  className?: string;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ onNavigate, onClose, className = '' }) => {
   const { activeTenant, role, isOwner } = useTenant();
   const { t } = useLanguage();
   const [showDiagnostics, setShowDiagnostics] = useState(false);
@@ -21,21 +28,36 @@ export const Sidebar: React.FC = () => {
   const roleMeta = getRoleMeta(role);
 
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white flex flex-col justify-between h-screen sticky top-0 overflow-y-auto">
+    <aside
+      className={`w-64 border-r border-slate-200 bg-white flex flex-col justify-between h-full md:h-screen md:sticky md:top-0 overflow-y-auto ${className}`}
+    >
       <div>
         {/* App Brand Header */}
-        <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white flex items-center justify-center shadow-md shadow-brand-500/20">
-            <Layers className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="font-bold text-slate-900 leading-none flex items-center gap-1.5 text-base tracking-tight">
-              CollectFlow
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white flex items-center justify-center shadow-md shadow-brand-500/20">
+              <Layers className="w-5 h-5" />
             </div>
-            <div className="text-[10px] font-semibold text-brand-600 uppercase tracking-widest mt-0.5">
-              Receivables SaaS
+            <div>
+              <div className="font-bold text-slate-900 leading-none flex items-center gap-1.5 text-base tracking-tight">
+                CollectFlow
+              </div>
+              <div className="text-[10px] font-semibold text-brand-600 uppercase tracking-widest mt-0.5">
+                Receivables SaaS
+              </div>
             </div>
           </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              aria-label="Close Navigation Menu"
+              data-testid="sidebar-close-btn"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Role Identity & Area Scope Card */}
@@ -72,6 +94,7 @@ export const Sidebar: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
+                onClick={() => onNavigate?.()}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition ${
                     isActive
@@ -111,6 +134,7 @@ export const Sidebar: React.FC = () => {
                       <NavLink
                         key={item.to}
                         to={item.to}
+                        onClick={() => onNavigate?.()}
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                             isActive

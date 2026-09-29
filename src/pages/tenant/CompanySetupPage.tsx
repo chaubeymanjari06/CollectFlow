@@ -77,8 +77,8 @@ export const CompanySetupPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-5 sm:p-8">
         <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100">
           <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
             <Building2 className="w-6 h-6" />

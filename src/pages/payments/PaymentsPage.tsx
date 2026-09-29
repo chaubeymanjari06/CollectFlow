@@ -537,7 +537,7 @@ export const PaymentsPage: React.FC = () => {
       {/* Webhook Simulation Modal */}
       {showWebhookModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -656,7 +656,7 @@ export const PaymentsPage: React.FC = () => {
       {/* Manual Receipt Modal */}
       {showManualReceiptModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">

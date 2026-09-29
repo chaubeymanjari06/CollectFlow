@@ -325,7 +325,7 @@ export const ReconciliationPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 text-xs font-semibold gap-6">
+      <div className="flex border-b border-slate-200 text-xs font-semibold gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap pb-px">
         <button
           onClick={() => setActiveTab('APPROVAL')}
           className={`pb-3 flex items-center gap-1.5 border-b-2 transition ${

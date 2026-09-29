@@ -450,7 +450,7 @@ export const InvoicesPage: React.FC = () => {
       {/* Invoice Detail / Payment Modal */}
       {selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
@@ -785,7 +785,7 @@ export const InvoicesPage: React.FC = () => {
       {/* Create Invoice Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 mb-1">Create Invoice</h3>
             <p className="text-xs text-slate-500 mb-4">Add a bill to calculate aging and generate UPI link</p>
 

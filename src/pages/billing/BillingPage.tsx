@@ -653,7 +653,7 @@ Thank you for automating receivables with CollectFlow!`;
       {/* ========================================================================= */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-base font-bold text-slate-900">Update Billing Payment Method</h3>
               <p className="text-xs text-slate-500">
@@ -708,7 +708,7 @@ Thank you for automating receivables with CollectFlow!`;
       {/* ========================================================================= */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-2.5 text-rose-600">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <h3 className="text-base font-bold text-slate-900">Cancel Subscription?</h3>
